@@ -4,72 +4,39 @@ services:
   - type: web
     name: spotbulle-backend
     env: python
-    region: frankfurt # Ou une autre région de votre choix
-    plan: free # Ou un plan payant selon les besoins
-    rootDir: backend # Spécifie que le service est dans le sous-dossier backend
+    region: frankfurt
+    plan: free
+    rootDir: backend
     buildFilter:
       paths:
-      - "backend/**"
+        - "backend/**"
     buildCommand: |
       pip install --upgrade pip
       pip install -r requirements.txt
-      # Appliquer les migrations Alembic au démarrage ou lors du build
-      # Si DATABASE_URL est configuré pour la DB de production Render
       alembic upgrade head 
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --forwarded-allow-ips="*"
-    healthCheckPath: / # Ou un endpoint de health check dédié
+    healthCheckPath: /
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11 # Assurez-vous que cela correspond à votre environnement de dev
+        value: 3.11
       - key: DATABASE_URL
         fromDatabase:
-          name: spotbulle-db # Nom de votre service de base de données sur Render
+          name: spotbulle-db
           property: connectionString
       - key: SECRET_KEY
-        generateValue: true # Render peut générer une clé secrète aléatoire
+        generateValue: true
       - key: SUPABASE_URL
-        sync: false # Mettez vos valeurs réelles dans l_interface Render
+        sync: false
       - key: SUPABASE_KEY
-        sync: false # Mettez vos valeurs réelles dans l_interface Render
+        sync: false
       - key: OPENAI_API_KEY
-        sync: false # Mettez vos valeurs réelles dans l_interface Render
+        sync: false
       - key: BUCKET_NAME
-        sync: false # Mettez vos valeurs réelles dans l_interface Render
-      # Ajoutez d_autres variables d_environnement nécessaires ici
+        sync: false
 
-  # Service Frontend (React + Vite)
-  - type: staticSite
-    name: spotbulle-frontend
-    region: frankfurt # Même région que le backend de préférence
-    plan: free
-    rootDir: frontend # Spécifie que le service est dans le sous-dossier frontend
-    buildFilter:
-      paths:
-      - "frontend/**"
-    buildCommand: |
-      npm install
-      npm run build
-    staticPublishPath: ./dist # Répertoire de build de Vite
-    routes:
-      - type: rewrite
-        source: "/*"
-        destination: "/index.html"
-    envVars:
-      - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: spotbulle-backend # Nom du service backend défini ci-dessus
-          property: url # Render injectera l_URL publique du backend
-      # Ajoutez d_autres variables d_environnement nécessaires au build du frontend
-
-# Service de Base de Données (PostgreSQL)
-# Si vous utilisez la base de données de Render
 databases:
   - name: spotbulle-db
     region: frankfurt
-    plan: free # Ou un plan payant
-    databaseName: spotbulle_production # Nom de la base de données à créer
-    user: spotbulle_user # Nom d_utilisateur pour la base de données
-    # Le mot de passe sera généré par Render et injecté via DATABASE_URL
-    # Assurez-vous que psycopg2-binary est dans requirements.txt si vous utilisez PostgreSQL
-
+    plan: free
+    databaseName: spotbulle_production
+    user: spotbulle_user
