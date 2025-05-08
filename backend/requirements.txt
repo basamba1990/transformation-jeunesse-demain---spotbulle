@@ -6,9 +6,9 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
 # Pour une base de données PostgreSQL, décommentez la ligne suivante :
-psycopg2-binary
+# psycopg2-binary
 # Pour une base de données SQLite asynchrone (si vous adaptez database.py pour l'asynchrone) :
-# aiosqlite
+aiosqlite
 # Pour l'intégration OpenAI (comme ébauché dans ia_service.py)
 openai
 supabase
