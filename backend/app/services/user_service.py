@@ -1,0 +1,56 @@
+# Fonctions CRUD (Create, Read, Update, Delete) pour le modèle User
+
+from sqlalchemy.orm import Session
+from typing import Optional, List
+
+from ..models import user_model
+from ..schemas import user_schema
+from ..utils import security # Pour le hachage du mot de passe
+
+def get_user(db: Session, user_id: int) -> Optional[user_model.User]:
+    return db.query(user_model.User).filter(user_model.User.id == user_id).first()
+
+def get_user_by_email(db: Session, email: str) -> Optional[user_model.User]:
+    return db.query(user_model.User).filter(user_model.User.email == email).first()
+
+def get_users(db: Session, skip: int = 0, limit: int = 100) -> List[user_model.User]:
+    return db.query(user_model.User).offset(skip).limit(limit).all()
+
+def create_user(db: Session, user: user_schema.UserCreate) -> user_model.User:
+    hashed_password = security.get_password_hash(user.password)
+    db_user = user_model.User(
+        email=user.email,
+        hashed_password=hashed_password,
+        full_name=user.full_name
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+def update_user(db: Session, user_id: int, user_update: user_schema.UserUpdate) -> Optional[user_model.User]:
+    db_user = get_user(db, user_id)
+    if not db_user:
+        return None
+
+    update_data = user_update.model_dump(exclude_unset=True)
+    if "password" in update_data and update_data["password"]:
+        hashed_password = security.get_password_hash(update_data["password"])
+        db_user.hashed_password = hashed_password
+        del update_data["password"] # Ne pas essayer de mettre à jour le champ password directement
+
+    for key, value in update_data.items():
+        setattr(db_user, key, value)
+
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+def delete_user(db: Session, user_id: int) -> Optional[user_model.User]:
+    db_user = get_user(db, user_id)
+    if not db_user:
+        return None
+    db.delete(db_user)
+    db.commit()
+    return db_user
+
