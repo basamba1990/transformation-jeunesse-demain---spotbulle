@@ -5,7 +5,7 @@ import os
 import tempfile
 from fastapi import HTTPException, status
 
-from app.config import settings # Pour récupérer OPENAI_API_KEY
+from ..config import settings # Pour récupérer OPENAI_API_KEY
 
 # Initialiser le client OpenAI
 # Assurez-vous que la variable d'environnement OPENAI_API_KEY est définie
