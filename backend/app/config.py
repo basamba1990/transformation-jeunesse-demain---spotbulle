@@ -3,49 +3,52 @@
 import os
 from dotenv import load_dotenv
 from urllib.parse import urlparse
-from pydantic import BaseSettings, validator
 
 # Chargement des variables depuis le fichier .env
 load_dotenv()
 
-# Classe de configuration
-class Settings(BaseSettings):
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./spotbulle.db")
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "votre_cle_secrete_par_defaut_a_changer")
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
-
-    SUPABASE_URL: str = os.getenv("SUPABASE_URL")
-    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY")
-    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY")
-    BUCKET_NAME: str = os.getenv("BUCKET_NAME", "default-bucket")
-    PROJECT_EMAIL: str = os.getenv("PROJECT_EMAIL", "admin@exemple.com")
-    PROJECT_ID: str = os.getenv("PROJECT_ID", "default_project_id")
-    DATABASE_PASSWORD: str = os.getenv("DATABASE_PASSWORD")
-
-    @validator("SUPABASE_URL")
-    def validate_url(cls, v):
-        try:
-            result = urlparse(v)
-            if not all([result.scheme in ['http', 'https'], result.netloc]):
-                raise ValueError("URL invalide")
-            return v
-        except Exception as e:
-            raise ValueError(f"Erreur de validation SUPABASE_URL : {e}")
-
-# Création d'une instance globale
-settings = Settings()
+# Fonction utilitaire pour valider l'URL (Supabase par exemple)
+def is_valid_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme in ['http', 'https'], result.netloc])
+    except Exception as e:
+        print(f"Erreur lors de la validation de l'URL : {e}")
+        return False
 
 # Fonction pour masquer les valeurs sensibles dans l'affichage debug
 def masked(value):
     return '*' * len(value) if value else None
 
-# Affichage pour le débogage (sans exposer les clés sensibles)
-print(f"DATABASE_URL: {settings.DATABASE_URL}")
-print(f"SECRET_KEY: {masked(settings.SECRET_KEY)}")
-print(f"SUPABASE_URL: {settings.SUPABASE_URL}")
-print(f"SUPABASE_KEY: {masked(settings.SUPABASE_KEY)}")
-print(f"OPENAI_API_KEY: {masked(settings.OPENAI_API_KEY)}")
-print(f"BUCKET_NAME: {settings.BUCKET_NAME}")
-print(f"PROJECT_EMAIL: {settings.PROJECT_EMAIL}")
-print(f"PROJECT_ID: {settings.PROJECT_ID}")
+# Classe de configuration
+class Settings:
+    def __init__(self):
+        self.DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./spotbulle.db")
+        self.SECRET_KEY = os.getenv("SECRET_KEY", "votre_cle_secrete_par_defaut_a_changer")
+        self.ALGORITHM = "HS256"
+        self.ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+
+        self.SUPABASE_URL = os.getenv("SUPABASE_URL")
+        self.SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+        self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+        self.BUCKET_NAME = os.getenv("BUCKET_NAME", "default-bucket")
+        self.PROJECT_EMAIL = os.getenv("PROJECT_EMAIL", "admin@exemple.com")
+        self.PROJECT_ID = os.getenv("PROJECT_ID", "default_project_id")
+        self.DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
+
+        # Vérifie l'URL Supabase au démarrage
+        if not is_valid_url(self.SUPABASE_URL):
+            raise ValueError(f"SUPABASE_URL invalide : {self.SUPABASE_URL}")
+
+        # Debug : affiche les principales variables (masquées)
+        print(f"DATABASE_URL: {self.DATABASE_URL}")
+        print(f"SECRET_KEY: {masked(self.SECRET_KEY)}")
+        print(f"SUPABASE_URL: {self.SUPABASE_URL}")
+        print(f"SUPABASE_KEY: {masked(self.SUPABASE_KEY)}")
+        print(f"OPENAI_API_KEY: {masked(self.OPENAI_API_KEY)}")
+        print(f"BUCKET_NAME: {self.BUCKET_NAME}")
+        print(f"PROJECT_EMAIL: {self.PROJECT_EMAIL}")
+        print(f"PROJECT_ID: {self.PROJECT_ID}")
+
+# Crée une instance unique (singleton) accessible globalement
+settings = Settings()
