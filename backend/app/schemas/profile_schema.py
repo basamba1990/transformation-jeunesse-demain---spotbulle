@@ -1,14 +1,12 @@
 # Schémas Pydantic pour l'entité Profil Utilisateur
 
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, HttpUrl, validator, ConfigDict
 from typing import Optional, List, Dict, Any, Literal
 from datetime import datetime
 
 # Configuration globale pour interdire les champs supplémentaires non définis dans les modèles
 class StrictBaseModel(BaseModel):
-    class Config:
-        extra = "forbid"
-        orm_mode = True
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
 # Types DISC possibles
 DISCType = Literal["Dominant", "Influent", "Stable", "Conforme", "Unknown"]
@@ -35,7 +33,7 @@ class ProfileCreate(ProfileBase):
 # Schéma pour la mise à jour d'un profil par l'utilisateur
 class ProfileUpdate(StrictBaseModel):
     bio: Optional[str] = Field(None, max_length=2000)
-    profile_picture_url: Optional[HttpUrl] = None # L'upload d'image serait une route séparée qui met à jour ce champ
+    profile_picture_url: Optional[HttpUrl] = None  # L'upload d'image serait une route séparée qui met à jour ce champ
     interests: Optional[List[str]] = Field(None, max_items=30)
     skills: Optional[List[str]] = Field(None, max_items=30)
     objectives: Optional[str] = Field(None, max_length=1000)
@@ -64,7 +62,7 @@ class Profile(ProfileBase):
 # Schéma pour les réponses au questionnaire DISC
 class DiscAnswer(StrictBaseModel):
     question_id: int
-    selected_option: str # ou int, selon la conception du questionnaire
+    selected_option: str  # ou int, selon la conception du questionnaire
 
 class DiscAssessmentSubmission(StrictBaseModel):
     answers: List[DiscAnswer] = Field(..., min_items=1, description="Liste des réponses au questionnaire DISC.")
@@ -80,5 +78,4 @@ class DISCResults(StrictBaseModel):
     disc_type: DISCType
     scores: DISCScores
     summary: Optional[str] = None
-    detailed_report_url: Optional[HttpUrl] = None # Si un rapport plus détaillé est généré
-
+    detailed_report_url: Optional[HttpUrl] = None  # Si un rapport plus détaillé est généré
