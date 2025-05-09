@@ -1,14 +1,15 @@
 # Schémas Pydantic pour l'entité Pod
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, ConfigDict, validator
 from typing import Optional, List
 from datetime import datetime
 
 # Configuration globale pour interdire les champs supplémentaires non définis dans les modèles
 class StrictBaseModel(BaseModel):
-    class Config:
-        extra = "forbid"
-        orm_mode = True
+    model_config = ConfigDict(
+        extra="forbid",             # Empêche les champs non définis
+        from_attributes=True        # Remplace orm_mode = True en Pydantic v2
+    )
 
 # Schéma de base pour un pod
 class PodBase(StrictBaseModel):
@@ -35,7 +36,7 @@ class PodUpdate(StrictBaseModel):
 # Schéma pour lire un pod (ce qui est retourné par l'API)
 class Pod(PodBase):
     id: int
-    user_id: int # Renommé owner_id en user_id pour cohérence avec user_model
+    user_id: int  # Renommé owner_id en user_id pour cohérence avec user_model
     audio_file_url: Optional[HttpUrl] = None
     transcription: Optional[str] = Field(None, description="Transcription du contenu audio.")
     created_at: datetime
@@ -52,7 +53,3 @@ class Pod(PodBase):
             # S'assurer que tous les éléments sont des strings et non vides après strip
             return [str(tag).strip() for tag in v if str(tag).strip()]
         raise ValueError("Les tags doivent être une liste de chaînes de caractères ou une chaîne séparée par des virgules.")
-
-# Ajout du validateur manquant
-from pydantic import validator
-
