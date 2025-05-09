@@ -1,14 +1,13 @@
 # Schémas Pydantic pour l'entité Utilisateur
 
 from pydantic import BaseModel, EmailStr, Field
+from pydantic.config import ConfigDict
 from typing import Optional
 from datetime import datetime
 
 # Configuration globale pour interdire les champs supplémentaires non définis dans les modèles
 class StrictBaseModel(BaseModel):
-    class Config:
-        extra = "forbid"
-        orm_mode = True
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
 # Schéma de base pour l'utilisateur (attributs partagés)
 class UserBase(StrictBaseModel):
@@ -44,4 +43,3 @@ class User(UserBase):
 # Schéma pour le prompt utilisateur (utilisé par le bot IA)
 class UserPrompt(StrictBaseModel):
     prompt: str = Field(..., min_length=1, max_length=1000) # Limiter la taille du prompt
-
