@@ -25,3 +25,8 @@ httpx # Nécessaire pour TestClient de FastAPI
 alembic
 slowapi
 python-multipart
+requests
+moviepy
+ffmpeg-python
+PyYAML
+tqdm
