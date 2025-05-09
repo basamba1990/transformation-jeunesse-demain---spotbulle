@@ -1,4 +1,4 @@
-# Fonctions utilitaires pour la sécurité et l'authentification (hachage de mot de passe, création/vérification JWT)
+# backend/app/utils/auth_utils.py (ou autre fichier utils)
 
 from datetime import datetime, timedelta
 from typing import Optional
@@ -10,34 +10,37 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from ..config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
-from ..database import get_db  # Assurez-vous que get_db est correctement défini
-from ..services import user_service  # Pour récupérer l'utilisateur
-from ..schemas import user_schema, token_schema  # Pour les types
-from ..models import user as user_model  # <<< CORRECTION ICI : importer le modèle User
+from ..database import get_db
+from ..services import user_service
+from ..schemas import user_schema, token_schema
+from ..models.user_model import User  # CORRECTION FINALE : importer directement la classe User
 
 # Contexte pour le hachage des mots de passe
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Schéma OAuth2 pour la récupération du token depuis le header Authorization
+# OAuth2 - récupération du token depuis le header Authorization
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
+
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Optional[user_model.User]:
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -57,7 +60,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
     return user
 
-async def get_current_active_user(current_user: user_schema.User = Depends(get_current_user)) -> user_schema.User:
+
+async def get_current_active_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
     if not current_user.is_active:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Inactive user"
+        )
     return current_user
