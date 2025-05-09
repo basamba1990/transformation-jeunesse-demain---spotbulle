@@ -24,3 +24,4 @@ httpx # Nécessaire pour TestClient de FastAPI
 
 alembic
 slowapi
+python-multipart
