@@ -10,9 +10,10 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from ..config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
-from ..database import get_db # Assurez-vous que get_db est correctement défini
-from ..services import user_service # Pour récupérer l'utilisateur
-from ..schemas import user_schema, token_schema # Pour les types
+from ..database import get_db  # Assurez-vous que get_db est correctement défini
+from ..services import user_service  # Pour récupérer l'utilisateur
+from ..schemas import user_schema, token_schema  # Pour les types
+from ..models import user as user_model  # <<< CORRECTION ICI : importer le modèle User
 
 # Contexte pour le hachage des mots de passe
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -50,7 +51,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         token_data = token_schema.TokenData(email=email)
     except JWTError:
         raise credentials_exception
-    
+
     user = user_service.get_user_by_email(db, email=token_data.email)
     if user is None:
         raise credentials_exception
@@ -60,4 +61,3 @@ async def get_current_active_user(current_user: user_schema.User = Depends(get_c
     if not current_user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return current_user
-
