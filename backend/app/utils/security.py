@@ -1,5 +1,3 @@
-# backend/app/utils/auth_utils.py (ou autre fichier utils)
-
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -9,11 +7,11 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from ..config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from ..config import settings  # Correction : importer settings (instance de la classe Settings)
 from ..database import get_db
 from ..services import user_service
 from ..schemas import user_schema, token_schema
-from ..models.user_model import User  # CORRECTION FINALE : importer directement la classe User
+from ..models.user_model import User  # Import direct de la classe User
 
 # Contexte pour le hachage des mots de passe
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -32,9 +30,9 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 async def get_current_user(
@@ -47,7 +45,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: Optional[str] = payload.get("sub")
         if email is None:
             raise credentials_exception
