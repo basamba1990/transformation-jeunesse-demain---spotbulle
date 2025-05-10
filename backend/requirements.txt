@@ -27,7 +27,4 @@ alembic
 slowapi
 python-multipart
 requests
-moviepy
-ffmpeg-python
-PyYAML
-tqdm
+
