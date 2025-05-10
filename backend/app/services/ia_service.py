@@ -15,13 +15,19 @@ from ..database import SessionLocal
 if settings.OPENAI_API_KEY:
     openai.api_key = settings.OPENAI_API_KEY
 
-# --- Chargement du modèle d'embedding local ---
+# --- Chargement paresseux du modèle SBERT ---
 embedding_model_name = 'all-MiniLM-L6-v2'
-try:
-    sbert_model = SentenceTransformer(embedding_model_name)
-except Exception as e:
-    print(f"[Erreur] Chargement SBERT : {e}")
-    sbert_model = None
+sbert_model = None
+
+def load_sbert_model():
+    global sbert_model
+    if sbert_model is None:
+        try:
+            sbert_model = SentenceTransformer(embedding_model_name)
+        except Exception as e:
+            print(f"[Erreur] Chargement paresseux SBERT : {e}")
+            sbert_model = None
+    return sbert_model
 
 # --- Réponse OpenAI ---
 def generate_openai_response(prompt: str) -> Dict[str, str]:
@@ -47,10 +53,11 @@ def get_embedding_openai(text: str) -> Optional[List[float]]:
         return None
 
 def get_embedding_sbert(text: str) -> Optional[List[float]]:
-    if not sbert_model:
+    model = load_sbert_model()
+    if not model:
         return None
     try:
-        return sbert_model.encode(text).tolist()
+        return model.encode(text).tolist()
     except Exception as e:
         print(f"[Erreur] Embedding SBERT : {e}")
         return None
