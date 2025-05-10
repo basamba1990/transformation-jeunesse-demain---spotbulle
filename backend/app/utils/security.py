@@ -7,43 +7,52 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-# Correct :
+# Configuration (via Pydantic Settings)
 from ..config import settings
 
-SECRET_KEY = settings.SECRET_KEY
-ALGORITHM = settings.ALGORITHM
-ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES  # Correction : importer settings (instance de la classe Settings)
+# Base de données
 from ..database import get_db
+
+# Services et schémas
 from ..services import user_service
 from ..schemas import user_schema, token_schema
-from ..models.user_model import User  # Import direct de la classe User
+from ..models.user_model import User
 
 # Contexte pour le hachage des mots de passe
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# OAuth2 - récupération du token depuis le header Authorization
+# OAuth2 – récupération du token depuis le header Authorization: Bearer <token>
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
+# ----------------------
+# Fonctions de sécurité
+# ----------------------
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Vérifie qu'un mot de passe en clair correspond à son hash."""
     return pwd_context.verify(plain_password, hashed_password)
 
-
 def get_password_hash(password: str) -> str:
+    """Génère un hash sécurisé pour un mot de passe donné."""
     return pwd_context.hash(password)
 
-
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """
+    Crée un JWT access token avec les données fournies et une expiration.
+    """
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return encoded_jwt
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ) -> Optional[User]:
+    """
+    Récupère l'utilisateur courant à partir du token JWT.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -63,10 +72,12 @@ async def get_current_user(
         raise credentials_exception
     return user
 
-
 async def get_current_active_user(
     current_user: User = Depends(get_current_user)
 ) -> User:
+    """
+    Vérifie que l'utilisateur actuel est actif.
+    """
     if not current_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
