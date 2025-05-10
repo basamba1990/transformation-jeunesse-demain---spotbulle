@@ -15,6 +15,7 @@ openai
 supabase
 scikit-learn # Ajouté pour la similarité cosinus et autres utilitaires ML
 sentence-transformers # Ajouté pour une alternative d'embeddings si OpenAI n'est pas souhaité ou pour des tests
+torch
 
 # Dépendances pour les tests
 pytest
