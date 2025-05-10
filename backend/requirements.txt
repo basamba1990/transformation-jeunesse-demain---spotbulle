@@ -1,7 +1,7 @@
 fastapi
 uvicorn[standard]
 sqlalchemy
-pydantic[email]
+pydantic<2.0
 python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
