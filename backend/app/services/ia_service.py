@@ -1,23 +1,25 @@
-from sqlalchemy.orm import Session
 from typing import Optional, List, Dict, Any
+from sqlalchemy.orm import Session
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from sentence_transformers import SentenceTransformer
-import openai
 
-# Import interne
-from ..models import user_model, profile_model, pod_model
-from ..schemas import user_schema, profile_schema, pod_schema
-from ..config import settings
-from ..database import SessionLocal
+# --- Configuration SBERT & OpenAI ---
+from app.core.config import settings
 
-# --- Configuration OpenAI ---
-if settings.OPENAI_API_KEY:
-    openai.api_key = settings.OPENAI_API_KEY
-
-# --- Chargement paresseux du modèle SBERT ---
 embedding_model_name = 'all-MiniLM-L6-v2'
 sbert_model = None
+
+if settings.OPENAI_API_KEY:
+    import openai
+    openai.api_key = settings.OPENAI_API_KEY
+
+# --- Import interne ---
+from ..models import user_model, profile_model, pod_model
+from ..schemas import user_schema, profile_schema, pod_schema
+from ..database import SessionLocal
+
+# --- Chargement paresseux du modèle SBERT ---
+from sentence_transformers import SentenceTransformer
 
 def load_sbert_model():
     global sbert_model
@@ -29,29 +31,7 @@ def load_sbert_model():
             sbert_model = None
     return sbert_model
 
-# --- Réponse OpenAI ---
-def generate_openai_response(prompt: str) -> Dict[str, str]:
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant for the Spotbulle platform."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return {"response": response.choices[0].message.content}
-    except Exception as e:
-        return {"error": f"Erreur OpenAI : {str(e)}"}
-
 # --- Embeddings ---
-def get_embedding_openai(text: str) -> Optional[List[float]]:
-    try:
-        result = openai.Embedding.create(input=[text], model="text-embedding-ada-002")
-        return result["data"][0]["embedding"]
-    except Exception as e:
-        print(f"[Erreur] Embedding OpenAI : {e}")
-        return None
-
 def get_embedding_sbert(text: str) -> Optional[List[float]]:
     model = load_sbert_model()
     if not model:
@@ -60,6 +40,14 @@ def get_embedding_sbert(text: str) -> Optional[List[float]]:
         return model.encode(text).tolist()
     except Exception as e:
         print(f"[Erreur] Embedding SBERT : {e}")
+        return None
+
+def get_embedding_openai(text: str) -> Optional[List[float]]:
+    try:
+        result = openai.Embedding.create(input=[text], model="text-embedding-ada-002")
+        return result["data"][0]["embedding"]
+    except Exception as e:
+        print(f"[Erreur] Embedding OpenAI : {e}")
         return None
 
 def get_pod_embedding(db: Session, pod_id: int, use_openai: bool = False) -> Optional[List[float]]:
@@ -74,6 +62,20 @@ def get_pod_embedding(db: Session, pod_id: int, use_openai: bool = False) -> Opt
         pod.embedding = embedding
         db.commit()
     return embedding
+
+# --- Réponse OpenAI ---
+def generate_openai_response(prompt: str) -> Dict[str, str]:
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant for the Spotbulle platform."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return {"response": response.choices[0].message.content}
+    except Exception as e:
+        return {"error": f"Erreur OpenAI : {str(e)}"}
 
 # --- Similarité de profil ---
 def calculate_disc_compatibility(profile1: profile_model.Profile, profile2: profile_model.Profile) -> float:
