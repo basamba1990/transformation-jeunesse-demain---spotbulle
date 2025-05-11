@@ -1,17 +1,15 @@
-// frontend/src/pages/PodsPage.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { fetchAllPods, fetchMyPods, deletePod as apiDeletePod, transcribePod as apiTranscribePod, IPod } from "../services/api"; // Import IPod
+import { fetchAllPods, fetchMyPods, deletePod as apiDeletePod, transcribePod as apiTranscribePod } from "../services/api";
+import type { IPod } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
-
-// IPod est maintenant importé depuis api.ts où il inclut `transcription`
 
 const PodsPage: React.FC = () => {
     const [pods, setPods] = useState<IPod[]>([]);
     const [myPods, setMyPods] = useState<IPod[]>([]);
     const [viewMode, setViewMode] = useState<"all" | "mine">("all");
     const [isLoading, setIsLoading] = useState(false);
-    const [isTranscribing, setIsTranscribing] = useState<Record<number, boolean>>({}); // Pour suivre l'état de transcription par pod ID
+    const [isTranscribing, setIsTranscribing] = useState<Record<number, boolean>>({});
     const [error, setError] = useState<string | null>(null);
     const { user } = useAuth();
 
@@ -60,7 +58,6 @@ const PodsPage: React.FC = () => {
         setError(null);
         try {
             const updatedPod = await apiTranscribePod(podId);
-            // Mettre à jour le pod dans les listes `pods` et `myPods`
             const updateList = (list: IPod[]) => list.map(p => p.id === podId ? updatedPod : p);
             setPods(updateList);
             setMyPods(updateList);
@@ -68,7 +65,6 @@ const PodsPage: React.FC = () => {
         } catch (err: any) {
             console.error(`Error transcribing pod ${podId}:`, err);
             setError(err.response?.data?.detail || err.message || "Erreur lors de la transcription du pod.");
-            alert(err.response?.data?.detail || err.message || "Erreur lors de la transcription du pod.");
         }
         setIsTranscribing(prev => ({ ...prev, [podId]: false }));
     };
@@ -110,7 +106,7 @@ const PodsPage: React.FC = () => {
 
             {!isLoading && !error && displayPods.length === 0 && (
                 <p className="text-center text-gray-600">
-                    {viewMode === "all" ? "Aucun pod disponible pour le moment." : "Vous n\'avez pas encore créé de pod."}
+                    {viewMode === "all" ? "Aucun pod disponible pour le moment." : "Vous n'avez pas encore créé de pod."}
                 </p>
             )}
 
@@ -126,7 +122,7 @@ const PodsPage: React.FC = () => {
                                 {pod.audio_file_url && (
                                     <div className="my-3">
                                         <audio controls src={pod.audio_file_url} className="w-full">
-                                            Votre navigateur ne supporte pas l\'élément audio.
+                                            Votre navigateur ne supporte pas l'élément audio.
                                         </audio>
                                     </div>
                                 )}
@@ -140,9 +136,8 @@ const PodsPage: React.FC = () => {
                                 <p className="text-xs text-gray-500">Propriétaire ID: {pod.owner_id}</p>
                             </div>
                             <div className="mt-4 flex flex-wrap gap-2">
-                                {user && user.id === pod.owner_id && (
+                                {user?.id === pod.owner_id && (
                                     <>
-                                        {/* <Link to={`/pods/edit/${pod.id}`} className="text-sm bg-yellow-500 hover:bg-yellow-600 text-white py-1 px-3 rounded">Éditer</Link> */}
                                         <button 
                                             onClick={() => handleDeletePod(pod.id)}
                                             className="text-sm bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded"
@@ -155,7 +150,7 @@ const PodsPage: React.FC = () => {
                                                 disabled={isTranscribing[pod.id]}
                                                 className="text-sm bg-purple-500 hover:bg-purple-600 text-white py-1 px-3 rounded disabled:opacity-50"
                                             >
-                                                {isTranscribing[pod.id] ? "Transcription..." : "Transcrire l\'audio"}
+                                                {isTranscribing[pod.id] ? "Transcription..." : "Transcrire l'audio"}
                                             </button>
                                         )}
                                     </>
@@ -170,4 +165,3 @@ const PodsPage: React.FC = () => {
 };
 
 export default PodsPage;
-
