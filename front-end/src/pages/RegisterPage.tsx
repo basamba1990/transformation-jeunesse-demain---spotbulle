@@ -1,17 +1,15 @@
-// frontend/src/pages/RegisterPage.tsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { registerUser } from "../services/api";
+import { registerUser, IUser } from "../services/api";
 import { Button } from "../components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "../components/ui/Card";
-import { UserPlus, Mail, Lock, User as UserIcon } from 'lucide-react'; // Renamed User to UserIcon to avoid conflict
+import { UserPlus, Mail, Lock, User as UserIcon } from 'lucide-react';
 
-// Basic Input component (can be moved to a shared ui folder if used elsewhere)
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
 }
 
-const Input: React.FC<InputProps> = ({ className, type, icon, ...props }) => {
+const Input: React.FC<InputProps> = ({ className = '', type, icon, ...props }) => {
   return (
     <div className="relative">
       {icon && (
@@ -21,7 +19,7 @@ const Input: React.FC<InputProps> = ({ className, type, icon, ...props }) => {
       )}
       <input
         type={type}
-        className={`block w-full pl-${icon ? '10' : '3'} pr-3 py-2 border border-neutral-light rounded-md shadow-sm placeholder-neutral-default focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${className}`}
+        className={`block w-full ${icon ? 'pl-10' : 'pl-3'} pr-3 py-2 border border-neutral-light rounded-md shadow-sm placeholder-neutral-default focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${className}`}
         {...props}
       />
     </div>
@@ -49,7 +47,7 @@ const RegisterPage: React.FC = () => {
         }
         setIsLoading(true);
         try {
-            const userData = {
+            const userData: IUser = {
                 email,
                 password,
                 full_name: fullName,
@@ -61,7 +59,7 @@ const RegisterPage: React.FC = () => {
             }, 3000);
         } catch (err: any) {
             console.error("Registration error:", err);
-            if (err.response && err.response.data && err.response.data.detail) {
+            if (err.response?.data?.detail) {
                 if (Array.isArray(err.response.data.detail)) {
                     setError(err.response.data.detail.map((e: any) => e.msg).join(", "));
                 } else {
@@ -75,7 +73,7 @@ const RegisterPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-lightest p-4">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-lightest p-4">  
             <Link to="/" className="mb-8">
                 <h1 className="text-4xl font-bold text-primary hover:text-primary-dark transition-colors">Spotbulle</h1>
             </Link>
@@ -157,7 +155,7 @@ const RegisterPage: React.FC = () => {
                             className="w-full" 
                             isLoading={isLoading} 
                             size="lg"
-                            variant="secondary" // Using secondary for register to differentiate from login
+                            variant="secondary"
                         >
                             <UserPlus size={20} className="mr-2" />
                             {isLoading ? "Inscription..." : "S'inscrire"}
@@ -178,4 +176,3 @@ const RegisterPage: React.FC = () => {
 };
 
 export default RegisterPage;
-
