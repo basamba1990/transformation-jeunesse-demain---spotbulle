@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { fetchIAMatches, IAMatch } from '../../services/api';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { fetchIAMatches, type IAMatch } from '../../services/api';
 
 const MatchCard: React.FC<{ match: IAMatch }> = ({ match }) => {
   const profileImageUrl = match.profile?.profile_picture_url || 'https://via.placeholder.com/150';
@@ -40,7 +40,7 @@ const MatchCard: React.FC<{ match: IAMatch }> = ({ match }) => {
         <div className="mb-3">
           <h4 className="font-semibold text-sm text-gray-700">Intérêts communs :</h4>
           <div className="flex flex-wrap gap-2 mt-1">
-            {match.profile.interests.slice(0, 5).map((interest, idx) => (
+            {match.profile.interests.slice(0, 5).map((interest: string, idx: number) => (
               <span key={idx} className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs">
                 {interest}
               </span>
@@ -76,6 +76,7 @@ const MatchesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isAuthenticated) {
