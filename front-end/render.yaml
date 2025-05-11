@@ -1,16 +1,24 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-
-// Configuration pour le déploiement Render
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 5173,
-  },
-  build: {
-    outDir: 'dist',
-  },
-  define: {
-    'process.env': {}, // Évite des erreurs lors du build
-  },
-});
+services:
+  # Frontend (React + Vite)
+  - type: staticSite
+    name: spotbulle-frontend
+    region: frankfurt
+    plan: free
+    rootDir: front-end
+    buildFilter:
+      paths:
+        - "front-end/**"
+    buildCommand: |
+      npm install
+      npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: spotbulle-backend
+          property: url
