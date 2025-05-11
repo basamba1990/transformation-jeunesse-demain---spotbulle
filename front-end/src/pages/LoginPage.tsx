@@ -1,18 +1,16 @@
-// frontend/src/pages/LoginPage.tsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { loginUser, getCurrentUser } from "../services/api";
 import { Button } from "../components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "../components/ui/Card";
-import { LogIn, Mail, Lock } from 'lucide-react';
+import { LogIn as LoginIcon, Mail, Lock } from 'lucide-react';
 
-// Basic Input component for now, can be expanded into its own file later
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
 }
 
-const Input: React.FC<InputProps> = ({ className, type, icon, ...props }) => {
+const Input: React.FC<InputProps> = ({ className = '', type, icon, ...props }) => {
   return (
     <div className="relative">
       {icon && (
@@ -22,7 +20,7 @@ const Input: React.FC<InputProps> = ({ className, type, icon, ...props }) => {
       )}
       <input
         type={type}
-        className={`block w-full pl-${icon ? '10' : '3'} pr-3 py-2 border border-neutral-light rounded-md shadow-sm placeholder-neutral-default focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${className}`}
+        className={`block w-full ${icon ? 'pl-10' : 'pl-3'} pr-3 py-2 border border-neutral-light rounded-md shadow-sm placeholder-neutral-default focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${className}`}
         {...props}
       />
     </div>
@@ -56,7 +54,7 @@ const LoginPage: React.FC = () => {
             }
         } catch (err: any) {
             console.error("Login error:", err);
-            if (err.response && err.response.data && err.response.data.detail) {
+            if (err.response?.data?.detail) {
                 setError(err.response.data.detail);
             } else {
                 setError("Une erreur est survenue lors de la connexion. Veuillez réessayer.");
@@ -117,7 +115,7 @@ const LoginPage: React.FC = () => {
                             size="lg"
                             variant="primary"
                         >
-                            <LogIn size={20} className="mr-2" />
+                            <LoginIcon size={20} className="mr-2" />
                             {isLoading ? "Connexion..." : "Se connecter"}
                         </Button>
                     </form>
@@ -136,4 +134,3 @@ const LoginPage: React.FC = () => {
 };
 
 export default LoginPage;
-
