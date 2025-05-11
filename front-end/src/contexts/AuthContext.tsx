@@ -1,7 +1,5 @@
-// frontend/src/contexts/AuthContext.tsx
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getCurrentUser, logoutUser as apiLogout } from '../services/api';
-import { IUser } from '../services/api';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { IUser } from "../services/api";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -15,56 +13,43 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<IUser | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('spotbulle_token'));
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [state, setState] = useState<AuthContextType>({
+    isAuthenticated: false,
+    user: null,
+    token: null,
+    isLoading: true,
+    login: (token, user) => {
+      localStorage.setItem("spotbulle_token", token);
+      setState(prev => ({ ...prev, isAuthenticated: true, user, token }));
+    },
+    logout: () => {
+      localStorage.removeItem("spotbulle_token");
+      setState(prev => ({ ...prev, isAuthenticated: false, user: null, token: null }));
+    }
+  });
 
   useEffect(() => {
-    const verifyUser = async () => {
+    const verifyAuth = async () => {
+      const token = localStorage.getItem("spotbulle_token");
       if (token) {
         try {
-          const currentUser = await getCurrentUser();
-          setUser(currentUser);
-        } catch (error) {
-          console.error("Failed to fetch current user, logging out", error);
-          logout();
+          const user = await authService.getCurrentUser();
+          setState(prev => ({ ...prev, isAuthenticated: true, user, isLoading: false }));
+        } catch {
+          setState(prev => ({ ...prev, isLoading: false }));
         }
+      } else {
+        setState(prev => ({ ...prev, isLoading: false }));
       }
-      setIsLoading(false);
     };
-    verifyUser();
-  }, [token]);
+    verifyAuth();
+  }, []);
 
-  const login = (newToken: string, userData: IUser) => {
-    localStorage.setItem('spotbulle_token', newToken);
-    setToken(newToken);
-    setUser(userData);
-  };
-
-  const logout = () => {
-    apiLogout();
-    setToken(null);
-    setUser(null);
-  };
-
-  return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated: !!token && !!user, 
-      user, 
-      token, 
-      login, 
-      logout, 
-      isLoading 
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 };
