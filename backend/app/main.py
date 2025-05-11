@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
@@ -6,7 +6,11 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
+import os
 from .routes import auth_routes, user_routes, pod_routes, profile_routes, ia_routes
+
+# Liste des IP de confiance
+TRUSTED_IPS = {"127.0.0.1", "10.200.27.12"}  # à adapter selon le contexte
 
 # Initialiser le limiteur de taux
 limiter = Limiter(key_func=get_remote_address)
@@ -47,22 +51,29 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-# Configuration CORS (ajuster en production)
+# Configuration CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Attention à restreindre en production
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
-# Route racine avec limite de taux
+# Route racine avec sécurité renforcée
 @app.get("/")
-@limiter.limit("5/minute")
+@limiter.limit("30/minute")
 async def read_root(request: Request):
+    client_ip = request.client.host
+    print(f"Requête depuis l'IP : {client_ip}")  # Log simple
+
+    # Protection conditionnelle pour la prod
+    if os.getenv("ENV") == "production" and client_ip not in TRUSTED_IPS:
+        raise HTTPException(status_code=403, detail="Accès non autorisé")
+
     return {"message": "Bienvenue sur l’API spotbulle-mvp"}
 
-# Endpoint de santé pour Render ou test
+# Endpoint de santé
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
@@ -74,8 +85,6 @@ app.include_router(pod_routes.router, prefix="/api/v1", tags=["Pods"])
 app.include_router(profile_routes.router, prefix="/api/v1", tags=["Profiles"])
 app.include_router(ia_routes.router, prefix="/api/v1", tags=["IA"])
 
-# Point d'entrée pour le déploiement (Render, etc.)
+# Point d'entrée
 if __name__ == "__main__":
-    import uvicorn
-    import os
     uvicorn.run("app.main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
