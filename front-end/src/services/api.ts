@@ -42,17 +42,22 @@ export interface IProfile {
   updated_at: string;
 }
 
-// Services
+export type ProfileData = Omit<IProfile, "user_id" | "created_at" | "updated_at">;
+
+// Authentification
 export const authService = {
-  login: (credentials: URLSearchParams) => apiClient.post("/auth/token", credentials, {
-    headers: { "Content-Type": "application/x-www-form-urlencoded" }
-  }),
+  login: (credentials: URLSearchParams) =>
+    apiClient.post("/auth/token", credentials, {
+      headers: { "Content-Type": "application/x-www-form-urlencoded" }
+    }),
   register: (userData: Omit<IUser, "id" | "created_at" | "updated_at">) =>
     apiClient.post("/auth/register", userData),
-  getCurrentUser: (): Promise<IUser> => apiClient.get("/auth/users/me").then(res => res.data),
+  getCurrentUser: (): Promise<IUser> =>
+    apiClient.get("/auth/users/me").then(res => res.data),
   logout: () => localStorage.removeItem("spotbulle_token")
 };
 
+// DISC
 export const discService = {
   getQuestionnaire: (): Promise<Array<{ id: number; text: string; category: string }>> =>
     apiClient.get("/profiles/disc/questionnaire").then(res => res.data),
@@ -62,6 +67,7 @@ export const discService = {
     apiClient.get("/profiles/disc/results").then(res => res.data)
 };
 
+// Intelligence artificielle
 export const aiService = {
   getMatches: (limit = 10): Promise<Array<{
     user: IUser;
@@ -69,7 +75,26 @@ export const aiService = {
     match_score: number;
     score_details: Record<string, number>;
     match_reason: string;
-  }>> => apiClient.get(`/ia/matches?limit=${limit}`).then(res => res.data)
+  }>> =>
+    apiClient.get(`/ia/matches?limit=${limit}`).then(res => res.data)
 };
 
+// Nouveau : Service de gestion du profil utilisateur
+export const profileService = {
+  getMyProfile: (): Promise<IProfile> =>
+    apiClient.get("/profiles/me").then(res => res.data),
+
+  updateProfile: (data: Partial<ProfileData>) =>
+    apiClient.patch("/profiles/me", data),
+
+  uploadProfilePicture: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiClient.post("/profiles/me/picture", formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+  }
+};
+
+// Export par défaut du client
 export default apiClient;
