@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { fetchAllPods, fetchMyPods, deletePod as apiDeletePod, transcribePod as apiTranscribePod } from "../services/api";
-import type { IPod } from "../services/api";
-import { useAuth } from "../contexts/AuthContext";
+import { 
+  fetchAllPods, 
+  fetchMyPods, 
+  deletePod as apiDeletePod, 
+  transcribePod as apiTranscribePod 
+} from "@services/api";
+import type { IPod } from "@services/api";
+import { useAuth } from "@contexts/AuthContext";
 
 const PodsPage: React.FC = () => {
     const [pods, setPods] = useState<IPod[]>([]);
