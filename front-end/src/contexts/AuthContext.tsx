@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { IUser } from "../services/api";
+import { IUser, authService } from "../services/api"; // Import ajouté
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -20,11 +20,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isLoading: true,
     login: (token, user) => {
       localStorage.setItem("spotbulle_token", token);
-      setState(prev => ({ ...prev, isAuthenticated: true, user, token }));
+      setState(prev => ({ 
+        ...prev, 
+        isAuthenticated: true, 
+        user, 
+        token,
+        isLoading: false 
+      }));
     },
     logout: () => {
       localStorage.removeItem("spotbulle_token");
-      setState(prev => ({ ...prev, isAuthenticated: false, user: null, token: null }));
+      setState(prev => ({ 
+        ...prev, 
+        isAuthenticated: false, 
+        user: null, 
+        token: null 
+      }));
     }
   });
 
@@ -34,7 +45,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (token) {
         try {
           const user = await authService.getCurrentUser();
-          setState(prev => ({ ...prev, isAuthenticated: true, user, isLoading: false }));
+          setState(prev => ({ 
+            ...prev, 
+            isAuthenticated: true, 
+            user, 
+            isLoading: false 
+          }));
         } catch {
           setState(prev => ({ ...prev, isLoading: false }));
         }
