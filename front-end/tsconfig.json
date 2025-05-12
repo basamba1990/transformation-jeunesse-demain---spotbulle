@@ -9,9 +9,10 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
+    "baseUrl": "./src",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./*"],
+      "@services/*": ["./services/*"]
     },
     "types": ["vite/client"],
     "allowImportingTsExtensions": true
