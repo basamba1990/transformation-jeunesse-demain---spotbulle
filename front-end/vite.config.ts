@@ -1,9 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
-// Configuration pour le développement local + Render
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@services': path.resolve(__dirname, './src/services'),
+      '@contexts': path.resolve(__dirname, './src/contexts'),
+      '@': path.resolve(__dirname, './src')
+    }
+  },
   server: {
     port: 5173,
     proxy: {
@@ -16,8 +23,8 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-  },
-  define: {
-    'process.env': {}, // Évite des erreurs lors du build
-  },
+    rollupOptions: {
+      external: []
+    }
+  }
 });
