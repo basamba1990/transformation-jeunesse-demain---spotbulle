@@ -12,11 +12,12 @@
     "baseUrl": "./src",
     "paths": {
       "@/*": ["./*"],
-      "@services/*": ["./services/*"]
+      "@services/*": ["./services/*"],
+      "@contexts/*": ["./contexts/*"]
     },
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "allowImportingTsExtensions": true
   },
-  "include": ["src"],
+  "include": ["src", "vite.config.ts"],
   "exclude": ["node_modules"]
 }
