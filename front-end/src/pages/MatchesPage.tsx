@@ -1,7 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { fetchIAMatches, type IAMatch } from '../../services/api';
+import { aiService } from '@services/api';
+import type { IUser, IProfile } from '@services/api';
+
+interface IAMatch {
+  user: IUser;
+  profile: IProfile | null;
+  match_score: number;
+  score_details: {
+    disc_score: number;
+    interests_score: number;
+    content_score: number;
+    objectives_score: number;
+  };
+  match_reason: string;
+}
 
 const MatchCard: React.FC<{ match: IAMatch }> = ({ match }) => {
   const profileImageUrl = match.profile?.profile_picture_url || 'https://via.placeholder.com/150';
@@ -87,7 +101,7 @@ const MatchesPage: React.FC = () => {
 
     const loadMatches = async () => {
       try {
-        const fetchedMatches = await fetchIAMatches(10, false);
+        const fetchedMatches = await aiService.getMatches(10);
         setMatches(fetchedMatches);
       } catch (err) {
         console.error("Erreur lors de la récupération des matchs IA:", err);
@@ -98,7 +112,7 @@ const MatchesPage: React.FC = () => {
     };
 
     loadMatches();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate]);
 
   if (loading) {
     return (
