@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { 
-  fetchAllPods, 
-  fetchMyPods, 
-  deletePod as apiDeletePod, 
-  transcribePod as apiTranscribePod 
-} from "@services/api";
+import { podService } from "@services/api";
 import type { IPod } from "@services/api";
 import { useAuth } from "@contexts/AuthContext";
 
@@ -23,10 +18,10 @@ const PodsPage: React.FC = () => {
         setError(null);
         try {
             if (viewMode === "all") {
-                const allPodsData = await fetchAllPods();
+                const allPodsData = await podService.fetchAll();
                 setPods(allPodsData);
             } else if (user) {
-                const myPodsData = await fetchMyPods();
+                const myPodsData = await podService.fetchMyPods();
                 setMyPods(myPodsData);
             }
         } catch (err) {
@@ -45,7 +40,7 @@ const PodsPage: React.FC = () => {
             return;
         }
         try {
-            await apiDeletePod(podId);
+            await podService.deletePod(podId);
             setPods(prev => prev.filter(p => p.id !== podId));
             setMyPods(prev => prev.filter(p => p.id !== podId));
             alert("Pod supprimé avec succès !");
@@ -62,10 +57,8 @@ const PodsPage: React.FC = () => {
         setIsTranscribing(prev => ({ ...prev, [podId]: true }));
         setError(null);
         try {
-            const updatedPod = await apiTranscribePod(podId);
-            const updateList = (list: IPod[]) => list.map(p => p.id === podId ? updatedPod : p);
-            setPods(updateList);
-            setMyPods(updateList);
+            await podService.transcribePod(podId);
+            await loadPods(); // Recharger les données après transcription
             alert("Transcription terminée et enregistrée !");
         } catch (err: any) {
             console.error(`Error transcribing pod ${podId}:`, err);
