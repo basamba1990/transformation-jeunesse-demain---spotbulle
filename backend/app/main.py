@@ -20,8 +20,8 @@ app = FastAPI(
     description="API pour le projet spotbulle-mvp.",
     version="0.2.3",
     openapi_url="/api/v1/openapi.json",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc"
+    docs_url="/api/v1/docs",
+    redoc_url="/api/v1/redoc"
 )
 
 # Appliquer le décorateur de limiteur à l'application
@@ -54,23 +54,20 @@ app.add_middleware(SecurityHeadersMiddleware)
 # Configuration CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Attention à restreindre en production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
-# Route racine avec sécurité renforcée
+# Route racine avec protection IP (optionnel)
 @app.get("/")
 @limiter.limit("30/minute")
 async def read_root(request: Request):
     client_ip = request.client.host
     print(f"Requête depuis l'IP : {client_ip}")  # Log simple
-
-    # Protection conditionnelle pour la prod
     if os.getenv("ENV") == "production" and client_ip not in TRUSTED_IPS:
         raise HTTPException(status_code=403, detail="Accès non autorisé")
-
     return {"message": "Bienvenue sur l’API spotbulle-mvp"}
 
 # Endpoint de santé
@@ -78,13 +75,14 @@ async def read_root(request: Request):
 async def health_check():
     return {"status": "ok"}
 
-# Inclusion des routeurs
-app.include_router(auth_routes.router, prefix="/api/v1", tags=["Authentication"])
-app.include_router(user_routes.router, prefix="/api/v1", tags=["Users"])
-app.include_router(pod_routes.router, prefix="/api/v1", tags=["Pods"])
-app.include_router(profile_routes.router, prefix="/api/v1", tags=["Profiles"])
-app.include_router(ia_routes.router, prefix="/api/v1", tags=["IA"])
+# Inclusion des routeurs avec préfixe
+app.include_router(auth_routes.router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(user_routes.router, prefix="/api/v1/users", tags=["Users"])
+app.include_router(pod_routes.router, prefix="/api/v1/pods", tags=["Pods"])
+app.include_router(profile_routes.router, prefix="/api/v1/profiles", tags=["Profiles"])
+app.include_router(ia_routes.router, prefix="/api/v1/ia", tags=["IA"])
 
-# Point d'entrée
+# Point d'entrée local (inutile pour Render)
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
