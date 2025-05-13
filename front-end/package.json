@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "start": "vite preview --host 0.0.0.0 --port $PORT",
+    "render-deploy": "npm install --force && npm run build && npm run start",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
