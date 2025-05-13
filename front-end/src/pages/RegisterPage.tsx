@@ -49,12 +49,11 @@ const RegisterPage: React.FC = () => {
 
     setIsLoading(true);
     try {
+      // CORRECTION : Suppression des champs is_active et is_superuser
       await authService.register({
         email,
         password,
-        full_name: fullName,
-        is_active: true,
-        is_superuser: false
+        full_name: fullName // Garder uniquement les champs nécessaires
       });
       
       setSuccessMessage("Inscription réussie ! Vous allez être redirigé vers la page de connexion.");
@@ -82,7 +81,7 @@ const RegisterPage: React.FC = () => {
           {successMessage && <div className="bg-green-100 text-green-700 p-3 rounded-md mb-4">{successMessage}</div>}
           
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Les champs du formulaire restent identiques */}
+            {/* Ajoutez ici vos champs de formulaire si nécessaire */}
             <Button 
               type="submit" 
               className="w-full" 
