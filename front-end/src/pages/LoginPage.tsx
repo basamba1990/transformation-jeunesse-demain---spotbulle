@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@contexts/AuthContext";
-import { loginUser, getCurrentUser } from "@services/api";
+import { authService } from "@services/api";
 import { Button } from "@components/ui/Button";
 import { 
   Card, 
@@ -58,16 +58,17 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
+      // Création des credentials au format URLSearchParams
       const credentials = new URLSearchParams();
       credentials.append("username", email);
       credentials.append("password", password);
 
-      // Appel du service API corrigé
-      const { data: authData } = await loginUser(credentials);
+      // Appel corrigé via authService
+      const token = await authService.loginUser(credentials);
       
-      if (authData.access_token) {
-        const userData = await getCurrentUser();
-        login(authData.access_token, userData);
+      if (token) {
+        const userData = await authService.getCurrentUser();
+        login(token, userData);
         navigate("/profile/me");
       }
     } catch (err: any) {
