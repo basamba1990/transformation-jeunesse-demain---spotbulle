@@ -20,5 +20,5 @@ services:
       - key: VITE_API_BASE_URL
         fromService:
           type: web
-          name: spotbulle-backend
+          name: spotbulle-backend-sack
           property: url
