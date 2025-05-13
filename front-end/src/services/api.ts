@@ -1,10 +1,24 @@
 import axios from "axios";
 import type { DISCScores, DISCResults } from "../schemas/disc_schema";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+// Configuration de la base URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  "https://spotbulle-backend-sack.onrender.com/api/v1";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Intercepteur pour ajouter le token JWT
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem("spotbulle_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 // Interfaces principales
@@ -12,9 +26,7 @@ export interface IUser {
   id: number;
   email: string;
   full_name: string;
-  password?: string;
   is_active?: boolean;
-  is_superuser?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -55,85 +67,121 @@ export interface DISCAssessmentRequest {
 }
 
 export interface DISCResultsResponse {
-  results: DISCResults;
+  disc_type: string;
+  scores: DISCScores;
+  summary?: string;
 }
 
-// Services
+// Services DISC
 export const discService = {
-  getQuestionnaire: (): Promise<DISCQuestion[]> =>
-    apiClient.get("/profiles/disc/questionnaire").then(res => res.data),
+  getQuestionnaire: async (): Promise<DISCQuestion[]> => {
+    const response = await apiClient.get("/profiles/disc/questionnaire");
+    return response.data;
+  },
   
-  submitAssessment: (data: DISCAssessmentRequest): Promise<DISCResultsResponse> =>
-    apiClient.post("/profiles/disc/assess", data).then(res => res.data),
+  submitAssessment: async (data: DISCAssessmentRequest): Promise<DISCResultsResponse> => {
+    const response = await apiClient.post("/profiles/disc/assess", data);
+    return response.data;
+  },
   
-  getResults: (): Promise<DISCResultsResponse> =>
-    apiClient.get("/profiles/disc/results").then(res => res.data)
+  getResults: async (): Promise<DISCResultsResponse> => {
+    const response = await apiClient.get("/profiles/disc/results");
+    return response.data;
+  }
 };
 
-// Exportations individuelles Pod
-export const fetchAllPods = (): Promise<IPod[]> => 
-  apiClient.get("/pods").then(res => res.data);
-
-export const fetchMyPods = (): Promise<IPod[]> => 
-  apiClient.get("/pods/me").then(res => res.data);
-
-export const deletePod = (id: number) => 
-  apiClient.delete(`/pods/${id}`);
-
-export const transcribePod = (id: number) => 
-  apiClient.post(`/pods/${id}/transcribe`);
-
-// Service groupé Pod
+// Services Pod
 export const podService = {
-  fetchAll: fetchAllPods,
-  fetchMyPods,
-  deletePod,
-  transcribePod,
-  createPod: (data: FormData) => 
-    apiClient.post("/pods", data, {
-      headers: { "Content-Type": "multipart/form-data" }
-    })
+  fetchAll: async (): Promise<IPod[]> => {
+    const response = await apiClient.get("/pods");
+    return response.data;
+  },
+
+  fetchMyPods: async (): Promise<IPod[]> => {
+    const response = await apiClient.get("/pods/me");
+    return response.data;
+  },
+
+  deletePod: async (id: number): Promise<void> => {
+    await apiClient.delete(`/pods/${id}`);
+  },
+
+  transcribePod: async (id: number): Promise<void> => {
+    await apiClient.post(`/pods/${id}/transcribe`);
+  },
+
+  createPod: async (data: FormData): Promise<IPod> => {
+    const response = await apiClient.post("/pods", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  }
 };
 
 // Service d'authentification
 export const authService = {
-  loginUser: (credentials: URLSearchParams) => 
-    apiClient.post<{ access_token: string }>("/auth/token", credentials, {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" }
-    }),
-  
-  getCurrentUser: (): Promise<IUser> =>
-    apiClient.get("/auth/users/me").then(res => res.data),
+  loginUser: async (credentials: { email: string; password: string }): Promise<string> => {
+    const params = new URLSearchParams();
+    params.append("username", credentials.email);
+    params.append("password", credentials.password);
+    
+    const response = await apiClient.post("/auth/token", params, {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    });
+    return response.data.access_token;
+  },
 
-  register: (userData: Omit<IUser, "id" | "created_at" | "updated_at">) =>
-    apiClient.post("/auth/register", userData),
+  getCurrentUser: async (): Promise<IUser> => {
+    const response = await apiClient.get("/auth/users/me");
+    return response.data;
+  },
 
-  logout: () => localStorage.removeItem("spotbulle_token")
+  register: async (userData: { 
+    email: string; 
+    password: string; 
+    full_name: string 
+  }): Promise<IUser> => {
+    const response = await apiClient.post("/auth/register", userData);
+    return response.data;
+  },
+
+  logout: (): void => {
+    localStorage.removeItem("spotbulle_token");
+  }
 };
-
-// Exports individuels Auth
-export const loginUser = authService.loginUser;
-export const getCurrentUser = authService.getCurrentUser;
 
 // Service de profil
 export const profileService = {
-  getMyProfile: (): Promise<IProfile> =>
-    apiClient.get("/profiles/me").then(res => res.data),
+  getMyProfile: async (): Promise<IProfile> => {
+    const response = await apiClient.get("/profiles/me");
+    return response.data;
+  },
 
-  updateProfile: (data: Partial<ProfileData>) =>
-    apiClient.patch("/profiles/me", data),
+  updateProfile: async (data: Partial<ProfileData>): Promise<IProfile> => {
+    const response = await apiClient.patch("/profiles/me", data);
+    return response.data;
+  },
 
-  uploadProfilePicture: (file: File) => {
+  uploadProfilePicture: async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
-    return apiClient.post("/profiles/me/picture", formData, {
-      headers: { "Content-Type": "multipart/form-data" }
+    
+    const response = await apiClient.post("/profiles/me/picture", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     });
+    return response.data.profile_picture_url;
   }
 };
 
 // Types exports
 export type ProfileData = Omit<IProfile, "user_id" | "created_at" | "updated_at">;
+
 export type { 
   IUser, 
   IPod, 
