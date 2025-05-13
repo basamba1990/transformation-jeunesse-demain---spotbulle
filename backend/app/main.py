@@ -7,89 +7,82 @@ from slowapi.errors import RateLimitExceeded
 import os
 from .routes import auth_routes, user_routes, pod_routes, profile_routes, ia_routes
 
-# Configuration du limiteur de taux
+# Configuration initiale
 limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title="spotbulle-mvp API",
     description="API pour le projet spotbulle-mvp.",
-    version="0.2.3",
+    version="0.3.0",  # Augmentation de version
     openapi_url="/api/v1/openapi.json",
     docs_url="/api/v1/docs",
     redoc_url="/api/v1/redoc"
 )
 
-# Configuration de la sécurité
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+# Middleware de sécurité amélioré
+class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         security_headers = {
             "X-Content-Type-Options": "nosniff",
             "X-Frame-Options": "DENY",
-            "Content-Security-Policy": (
-                "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline'; "
-                "style-src 'self' 'unsafe-inline'; "
-                "img-src 'self' data:; "
-                "font-src 'self'; "
-                "object-src 'none'; "
-                "frame-ancestors 'none';"
-            ),
-            "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+            "Content-Security-Policy": "default-src 'self'",  # Simplifié
+            "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
             "Referrer-Policy": "strict-origin-when-cross-origin"
         }
-        for header, value in security_headers.items():
-            response.headers[header] = value
+        response.headers.update(security_headers)
         return response
 
-# Configuration CORS élargie
+# Configuration CORS unique
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["Content-Range", "X-Total-Count"]
 )
 
-# Configuration globale du limiteur
+# Configuration du rate limiter
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Middlewares
-app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(EnhancedSecurityHeadersMiddleware)
 
 # Endpoints de base
 @app.get("/")
-async def root():
-    return {"message": "Bienvenue sur l'API Spotbulle"}
+async def root_endpoint():
+    return {"message": "API Spotbulle opérationnelle", "version": app.version}
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "version": app.version}
 
-# Inclusion des routeurs
+# Configuration des routes corrigée
+API_PREFIX = "/api/v1"
+
 route_config = [
-    (auth_routes.router, "/auth"),
-    (user_routes.router, "/users"),
-    (pod_routes.router, "/pods"),
-    (profile_routes.router, "/profiles"),
-    (ia_routes.router, "/ia")
+    (auth_routes.router, "/auth", ["Authentication"]),
+    (user_routes.router, "/users", ["Users"]),
+    (pod_routes.router, "/pods", ["Pods"]),
+    (profile_routes.router, "/profiles", ["Profiles"]),
+    (ia_routes.router, "/ia", ["IA"])
 ]
 
-for router, path in route_config:
+for router, path, tags in route_config:
     app.include_router(
         router,
-        prefix=f"/api/v1{path}",
-        tags=[router.tags[0] if router.tags else "Non catégorisé"]
+        prefix=f"{API_PREFIX}{path}",
+        tags=tags
     )
 
-# Point d'entrée pour le déploiement
+# Configuration serveur
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         "app.main:app",
         host=os.getenv("HOST", "0.0.0.0"),
         port=int(os.getenv("PORT", 8000)),
-        reload=os.getenv("ENV") == "development"
+        reload=os.getenv("ENV") == "development",
+        log_config=None
     )
