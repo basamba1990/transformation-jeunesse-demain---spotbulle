@@ -70,46 +70,37 @@ export const discService = {
     apiClient.get("/profiles/disc/results").then(res => res.data)
 };
 
-// Exportations individuelles pour les pods
-export const fetchAllPods = (): Promise<IPod[]> => 
-  apiClient.get("/pods").then(res => res.data);
-
-export const fetchMyPods = (): Promise<IPod[]> => 
-  apiClient.get("/pods/me").then(res => res.data);
-
-export const deletePod = (id: number) => 
-  apiClient.delete(`/pods/${id}`);
-
-export const transcribePod = (id: number) => 
-  apiClient.post(`/pods/${id}/transcribe`);
-
 export const podService = {
-  fetchAll: fetchAllPods,
-  fetchMyPods,
-  deletePod,
-  transcribePod,
-  createPod: (data: FormData) =>
-    apiClient.post("/pods", data, {
-      headers: { "Content-Type": "multipart/form-data" }
-    })
+  fetchAll: (): Promise<IPod[]> => apiClient.get("/pods").then(res => res.data),
+  fetchMyPods: (): Promise<IPod[]> => apiClient.get("/pods/me").then(res => res.data),
+  deletePod: (id: number) => apiClient.delete(`/pods/${id}`),
+  transcribePod: (id: number) => apiClient.post(`/pods/${id}/transcribe`),
+  createPod: (data: FormData) => apiClient.post("/pods", data, {
+    headers: { "Content-Type": "multipart/form-data" }
+  })
 };
 
-// Export des types
-export type ProfileData = Omit<IProfile, "user_id" | "created_at" | "updated_at">;
-export type { IUser, IPod, IProfile, DISCQuestion, DISCAssessmentRequest };
-
+// Service d'authentification
 export const authService = {
-  login: (credentials: URLSearchParams) =>
-    apiClient.post("/auth/token", credentials, {
+  loginUser: (credentials: URLSearchParams) => 
+    apiClient.post<{ access_token: string }>("/auth/token", credentials, {
       headers: { "Content-Type": "application/x-www-form-urlencoded" }
     }),
-  register: (userData: Omit<IUser, "id" | "created_at" | "updated_at">) =>
-    apiClient.post("/auth/register", userData),
+  
   getCurrentUser: (): Promise<IUser> =>
     apiClient.get("/auth/users/me").then(res => res.data),
+
+  register: (userData: Omit<IUser, "id" | "created_at" | "updated_at">) =>
+    apiClient.post("/auth/register", userData),
+
   logout: () => localStorage.removeItem("spotbulle_token")
 };
 
+// Exports individuels
+export const loginUser = authService.loginUser;
+export const getCurrentUser = authService.getCurrentUser;
+
+// Service de profil
 export const profileService = {
   getMyProfile: (): Promise<IProfile> =>
     apiClient.get("/profiles/me").then(res => res.data),
@@ -124,6 +115,16 @@ export const profileService = {
       headers: { "Content-Type": "multipart/form-data" }
     });
   }
+};
+
+// Types exports
+export type ProfileData = Omit<IProfile, "user_id" | "created_at" | "updated_at">;
+export type { 
+  IUser, 
+  IPod, 
+  IProfile, 
+  DISCQuestion, 
+  DISCAssessmentRequest 
 };
 
 export default apiClient;
