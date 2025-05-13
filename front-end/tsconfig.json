@@ -12,6 +12,7 @@
     "baseUrl": "./src",
     "paths": {
       "@/*": ["./*"],
+      "@components/*": ["./components/*"], // Ajout clé
       "@services/*": ["./services/*"],
       "@contexts/*": ["./contexts/*"]
     },
