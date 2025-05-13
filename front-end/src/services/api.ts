@@ -70,14 +70,29 @@ export const discService = {
     apiClient.get("/profiles/disc/results").then(res => res.data)
 };
 
+// Exportations individuelles Pod
+export const fetchAllPods = (): Promise<IPod[]> => 
+  apiClient.get("/pods").then(res => res.data);
+
+export const fetchMyPods = (): Promise<IPod[]> => 
+  apiClient.get("/pods/me").then(res => res.data);
+
+export const deletePod = (id: number) => 
+  apiClient.delete(`/pods/${id}`);
+
+export const transcribePod = (id: number) => 
+  apiClient.post(`/pods/${id}/transcribe`);
+
+// Service groupé Pod
 export const podService = {
-  fetchAll: (): Promise<IPod[]> => apiClient.get("/pods").then(res => res.data),
-  fetchMyPods: (): Promise<IPod[]> => apiClient.get("/pods/me").then(res => res.data),
-  deletePod: (id: number) => apiClient.delete(`/pods/${id}`),
-  transcribePod: (id: number) => apiClient.post(`/pods/${id}/transcribe`),
-  createPod: (data: FormData) => apiClient.post("/pods", data, {
-    headers: { "Content-Type": "multipart/form-data" }
-  })
+  fetchAll: fetchAllPods,
+  fetchMyPods,
+  deletePod,
+  transcribePod,
+  createPod: (data: FormData) => 
+    apiClient.post("/pods", data, {
+      headers: { "Content-Type": "multipart/form-data" }
+    })
 };
 
 // Service d'authentification
@@ -96,7 +111,7 @@ export const authService = {
   logout: () => localStorage.removeItem("spotbulle_token")
 };
 
-// Exports individuels
+// Exports individuels Auth
 export const loginUser = authService.loginUser;
 export const getCurrentUser = authService.getCurrentUser;
 
