@@ -1,7 +1,7 @@
 services:
   # Frontend (React + Vite)
   - type: staticSite
-    name: spotbulle-frontend
+    name: mentorat-intelligent-spotbulle
     region: frankfurt
     plan: free
     rootDir: front-end
@@ -20,5 +20,5 @@ services:
       - key: VITE_API_BASE_URL
         fromService:
           type: web
-          name: spotbulle-backend-sack
+          name: spotbulle-backend
           property: url
