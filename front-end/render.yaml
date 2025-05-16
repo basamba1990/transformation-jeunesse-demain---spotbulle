@@ -1,7 +1,7 @@
 services:
   # Frontend (React + Vite)
   - type: staticSite
-    name: mentorat-intelligent---spotbulle
+    name: mentorat-intelligent-spotbulle
     region: frankfurt
     plan: free
     rootDir: front-end
