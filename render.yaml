@@ -12,8 +12,7 @@ services:
         - "backend/**"
     buildCommand: |
       pip install --upgrade pip
-      pip uninstall -y bcrypt passlib
-      pip install bcrypt==4.0.1 passlib==1.7.4
+      python fix_dependencies.py
       pip install -r requirements.txt
       python create_tables.py  # Ajoutez cette ligne
       alembic upgrade head 
