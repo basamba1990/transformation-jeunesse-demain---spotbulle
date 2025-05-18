@@ -15,10 +15,13 @@ def get_pods_by_owner(db: Session, owner_id: int, skip: int = 0, limit: int = 10
 def get_all_pods(db: Session, skip: int = 0, limit: int = 100) -> List[pod_model.Pod]:
     return db.query(pod_model.Pod).offset(skip).limit(limit).all()
 
-def create_pod(db: Session, pod: pod_schema.PodCreate, owner_id: int) -> pod_model.Pod:
+def create_pod(db: Session, title: str, description: Optional[str], tags: List[str], audio_url: str, owner_id: int) -> pod_model.Pod:
     # La logique de l'audio_file_url est gérée dans la route maintenant
     db_pod = pod_model.Pod(
-        **pod.model_dump(exclude_unset=True), # S'assurer que audio_file_url est inclus si présent dans pod_in
+        title=title,
+        description=description,
+        tags=tags,
+        audio_file_url=audio_url,
         owner_id=owner_id
     )
     db.add(db_pod)
@@ -26,12 +29,11 @@ def create_pod(db: Session, pod: pod_schema.PodCreate, owner_id: int) -> pod_mod
     db.refresh(db_pod)
     return db_pod
 
-def update_pod(db: Session, pod_id: int, pod_update: pod_schema.PodUpdate) -> Optional[pod_model.Pod]:
+def update_pod(db: Session, pod_id: int, update_data: dict) -> Optional[pod_model.Pod]:
     db_pod = get_pod(db, pod_id)
     if not db_pod:
         return None
 
-    update_data = pod_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_pod, key, value)
 
@@ -63,3 +65,5 @@ def delete_pod(db: Session, pod_id: int) -> Optional[pod_model.Pod]:
     # Mais comme il est supprimé, on ne peut plus le rafraîchir. On retourne l'objet avant suppression.
     return db_pod
 
+# Alias pour compatibilité
+get_pods = get_all_pods
