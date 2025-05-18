@@ -1,6 +1,6 @@
 # Routes pour la gestion des profils utilisateurs et du DISC
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any 
 
@@ -20,15 +20,6 @@ router = APIRouter(
     dependencies=[Depends(security.get_current_active_user)]
 )
 
-# Fonction de dépendance pour vérifier si l_utilisateur est un superutilisateur (copiée de user_routes pour l_exemple, idéalement dans security.py)
-# def get_current_active_superuser(current_user: user_schema.User = Depends(security.get_current_active_user)):
-#     if not current_user.is_superuser:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN, 
-#             detail="Operation not permitted: Requires superuser privileges."
-#         )
-#     return current_user
-
 @router.get("/me", response_model=profile_schema.Profile)
 @profile_router_limiter.limit("30/minute")
 async def read_my_profile(
@@ -38,8 +29,8 @@ async def read_my_profile(
 ):
     profile = profile_service.get_profile_by_user_id(db, user_id=current_user.id)
     if not profile:
-        # Tentative de création de profil si inexistant pour l_utilisateur courant
-        profile = profile_service.create_user_profile(db, user_id=current_user.id, profile_in=profile_schema.ProfileCreate())
+        # Tentative de création de profil si inexistant pour l'utilisateur courant
+        profile = profile_service.create_user_profile(db, user=current_user, profile_in=profile_schema.ProfileCreate())
         if not profile:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not create or retrieve profile for user.")
     return profile
@@ -52,18 +43,13 @@ async def update_my_profile(
     db: Session = Depends(get_db),
     current_user: user_schema.User = Depends(security.get_current_active_user)
 ):
-    # S_assurer que le profil existe avant de tenter la mise à jour
+    # S'assurer que le profil existe avant de tenter la mise à jour
     existing_profile = profile_service.get_profile_by_user_id(db, user_id=current_user.id)
     if not existing_profile:
-        # Si le profil n_existe pas, on pourrait le créer ici ou lever une erreur plus spécifique
-        # Pour la simplicité, on va supposer que create_user_profile gère la création si nécessaire
-        # ou que le client doit d_abord faire un GET /me pour s_assurer de sa création.
-        # Levons une erreur pour être plus strict.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found. Cannot update a non-existing profile.")
 
-    updated_profile = profile_service.update_profile(db, user_id=current_user.id, profile_update_schema=profile_update)
+    updated_profile = profile_service.update_profile(db, user_id=current_user.id, profile_update=profile_update)
     if updated_profile is None:
-        # Cette condition est un peu redondante si existing_profile est vérifié, mais garde pour la robustesse
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not update profile. Please try again later.")
     return updated_profile
 
@@ -75,23 +61,23 @@ async def read_user_profile_by_id(
     db: Session = Depends(get_db),
     current_user: user_schema.User = Depends(security.get_current_active_user)
 ):
-    target_user_exists = user_service.get_user(db, user_id=user_id)
-    if not target_user_exists:
+    target_user = user_service.get_user(db, user_id=user_id)
+    if not target_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with ID {user_id} not found.")
 
-    # Seul un superutilisateur peut voir le profil d_un autre utilisateur
+    # Seul un superutilisateur peut voir le profil d'un autre utilisateur
     if user_id != current_user.id and not current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this user_s profile."
+            detail="Not authorized to access this user's profile."
         )
     
     profile = profile_service.get_profile_by_user_id(db, user_id=user_id)
     if not profile:
-        # Si c_est le profil de l_utilisateur courant et qu_il n_existe pas, on pourrait le créer.
-        # Si c_est le profil d_un autre utilisateur (donc current_user est superuser) et qu_il n_existe pas, on renvoie 404.
+        # Si c'est le profil de l'utilisateur courant et qu'il n'existe pas, on pourrait le créer.
+        # Si c'est le profil d'un autre utilisateur (donc current_user est superuser) et qu'il n'existe pas, on renvoie 404.
         if user_id == current_user.id:
-            profile = profile_service.create_user_profile(db, user_id=current_user.id, profile_in=profile_schema.ProfileCreate())
+            profile = profile_service.create_user_profile(db, user=current_user, profile_in=profile_schema.ProfileCreate())
             if not profile:
                 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not create or retrieve profile.")
         else:
@@ -101,7 +87,7 @@ async def read_user_profile_by_id(
 # --- DISC Assessment Routes ---
 
 @router.get("/disc/questionnaire", response_model=List[disc_schema.DISCQuestion])
-@profile_router_limiter.limit("20/minute") # Limite pour l_accès au questionnaire
+@profile_router_limiter.limit("20/minute")
 async def get_disc_assessment_questionnaire(
     request: Request,
     db: Session = Depends(get_db),
@@ -109,16 +95,15 @@ async def get_disc_assessment_questionnaire(
 ):
     return disc_service.get_disc_questionnaire()
 
-@router.post("/disc/assess", response_model=profile_schema.DISCResults) # Changé pour utiliser le schéma Profile DISCResults
-@profile_router_limiter.limit("5/hour") # Limite plus stricte pour la soumission d_évaluation
+@router.post("/disc/assess", response_model=profile_schema.DISCResults)
+@profile_router_limiter.limit("5/hour")
 async def submit_disc_assessment(
     request: Request,
-    assessment_submission: profile_schema.DiscAssessmentSubmission, # Utilise le schéma de soumission du profil
+    assessment_submission: profile_schema.DiscAssessmentSubmission,
     db: Session = Depends(get_db),
     current_user: user_schema.User = Depends(security.get_current_active_user)
 ):
     try:
-        # Le service disc_service.assess_and_update_profile devrait gérer la logique de calcul et de mise à jour du profil
         updated_profile_with_disc = await disc_service.assess_and_update_profile(
             db=db, 
             user_id=current_user.id, 
@@ -127,11 +112,10 @@ async def submit_disc_assessment(
         if not updated_profile_with_disc or not updated_profile_with_disc.disc_type or not updated_profile_with_disc.disc_assessment_results:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to assess DISC profile or results are incomplete.")
         
-        # Retourner les résultats DISC formatés à partir du profil mis à jour
         return profile_schema.DISCResults(
             disc_type=updated_profile_with_disc.disc_type,
-            scores=updated_profile_with_disc.disc_assessment_results.get("scores", {}), # Assumer que scores est dans disc_assessment_results
-            summary=updated_profile_with_disc.disc_assessment_results.get("summary", "") # Assumer que summary est là
+            scores=updated_profile_with_disc.disc_assessment_results.get("scores", {}),
+            summary=updated_profile_with_disc.disc_assessment_results.get("summary", "")
         )
     except HTTPException as e:
         raise e
@@ -155,4 +139,3 @@ async def get_my_disc_results(
         scores=profile.disc_assessment_results.get("scores", {}),
         summary=profile.disc_assessment_results.get("summary", "")
     )
-
