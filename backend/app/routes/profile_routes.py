@@ -34,22 +34,8 @@ async def read_my_profile(
         if not profile:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not create or retrieve profile for user.")
     
-    # Correction: Convertir explicitement l'objet SQLAlchemy en dictionnaire compatible avec le schéma Pydantic
-    profile_dict = {
-        "id": profile.id,
-        "user_id": profile.user_id,
-        "bio": profile.bio or "",
-        "profile_picture_url": profile.profile_picture_url,
-        "disc_type": profile.disc_type,
-        "disc_assessment_results": profile.disc_assessment_results or {},
-        "interests": profile.interests or [],
-        "skills": profile.skills or [],
-        "objectives": profile.objectives if hasattr(profile, "objectives") else None,
-        "updated_at": profile.updated_at
-    }
-    
-    # Retourner un dictionnaire conforme au schéma Pydantic
-    return profile_dict
+    # Convertir l'objet ORM en modèle Pydantic
+    return profile_schema.Profile.model_validate(profile) if hasattr(profile_schema.Profile, 'model_validate') else profile_schema.Profile.from_orm(profile)
 
 @router.put("/me", response_model=profile_schema.Profile)
 @profile_router_limiter.limit("15/minute")
@@ -68,21 +54,8 @@ async def update_my_profile(
     if updated_profile is None:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not update profile. Please try again later.")
     
-    # Correction: Convertir explicitement l'objet SQLAlchemy en dictionnaire compatible avec le schéma Pydantic
-    profile_dict = {
-        "id": updated_profile.id,
-        "user_id": updated_profile.user_id,
-        "bio": updated_profile.bio or "",
-        "profile_picture_url": updated_profile.profile_picture_url,
-        "disc_type": updated_profile.disc_type,
-        "disc_assessment_results": updated_profile.disc_assessment_results or {},
-        "interests": updated_profile.interests or [],
-        "skills": updated_profile.skills or [],
-        "objectives": updated_profile.objectives if hasattr(updated_profile, "objectives") else None,
-        "updated_at": updated_profile.updated_at
-    }
-    
-    return profile_dict
+    # Convertir l'objet ORM en modèle Pydantic
+    return profile_schema.Profile.model_validate(updated_profile) if hasattr(profile_schema.Profile, 'model_validate') else profile_schema.Profile.from_orm(updated_profile)
 
 @router.get("/{user_id}", response_model=profile_schema.Profile)
 @profile_router_limiter.limit("30/minute")
@@ -114,21 +87,8 @@ async def read_user_profile_by_id(
         else:
              raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Profile not found for user {user_id}.")
     
-    # Correction: Convertir explicitement l'objet SQLAlchemy en dictionnaire compatible avec le schéma Pydantic
-    profile_dict = {
-        "id": profile.id,
-        "user_id": profile.user_id,
-        "bio": profile.bio or "",
-        "profile_picture_url": profile.profile_picture_url,
-        "disc_type": profile.disc_type,
-        "disc_assessment_results": profile.disc_assessment_results or {},
-        "interests": profile.interests or [],
-        "skills": profile.skills or [],
-        "objectives": profile.objectives if hasattr(profile, "objectives") else None,
-        "updated_at": profile.updated_at
-    }
-    
-    return profile_dict
+    # Convertir l'objet ORM en modèle Pydantic
+    return profile_schema.Profile.model_validate(profile) if hasattr(profile_schema.Profile, 'model_validate') else profile_schema.Profile.from_orm(profile)
 
 # --- DISC Assessment Routes ---
 
@@ -158,13 +118,10 @@ async def submit_disc_assessment(
         if not updated_profile_with_disc or not updated_profile_with_disc.disc_type or not updated_profile_with_disc.disc_assessment_results:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to assess DISC profile or results are incomplete.")
         
-        # Correction: S'assurer que disc_assessment_results est un dictionnaire
-        disc_assessment_results = updated_profile_with_disc.disc_assessment_results or {}
-        
         return profile_schema.DISCResults(
             disc_type=updated_profile_with_disc.disc_type,
-            scores=disc_assessment_results.get("scores", {"D": 0, "I": 0, "S": 0, "C": 0}),
-            summary=disc_assessment_results.get("summary", "")
+            scores=updated_profile_with_disc.disc_assessment_results.get("scores", {}),
+            summary=updated_profile_with_disc.disc_assessment_results.get("summary", "")
         )
     except HTTPException as e:
         raise e
@@ -180,19 +137,11 @@ async def get_my_disc_results(
     current_user: user_schema.User = Depends(security.get_current_active_user)
 ):
     profile = profile_service.get_profile_by_user_id(db, user_id=current_user.id)
-    if not profile or not profile.disc_type or not profile.disc_assessment_results:
+    if not profile or not profile.disc_type or not profile.disc_assessment_results or not isinstance(profile.disc_assessment_results, dict):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="DISC assessment results not found for this user. Please complete the assessment first.")
-
-    # Correction: S'assurer que disc_assessment_results est un dictionnaire
-    disc_assessment_results = profile.disc_assessment_results or {}
-    
-    # Correction: S'assurer que scores est un dictionnaire valide
-    scores = disc_assessment_results.get("scores", {})
-    if not isinstance(scores, dict) or not all(k in scores for k in ["D", "I", "S", "C"]):
-        scores = {"D": 0, "I": 0, "S": 0, "C": 0}
 
     return profile_schema.DISCResults(
         disc_type=profile.disc_type,
-        scores=scores,
-        summary=disc_assessment_results.get("summary", "")
+        scores=profile.disc_assessment_results.get("scores", {}),
+        summary=profile.disc_assessment_results.get("summary", "")
     )
