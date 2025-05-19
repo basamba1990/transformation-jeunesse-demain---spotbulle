@@ -10,6 +10,10 @@ class StrictBaseModel(BaseModel):
         extra="forbid",             # Empêche les champs non définis
         from_attributes=True        # Remplace orm_mode = True en Pydantic v2
     )
+    
+    # Ajout de la classe Config pour compatibilité Pydantic v1
+    class Config:
+        orm_mode = True
 
 # Schéma de base pour un pod
 class PodBase(StrictBaseModel):
@@ -41,6 +45,10 @@ class Pod(PodBase):
     transcription: Optional[str] = Field(None, description="Transcription du contenu audio.")
     created_at: datetime
     updated_at: datetime
+    
+    # Ajout explicite de la classe Config pour compatibilité Pydantic v1
+    class Config:
+        orm_mode = True
 
     # Pour s'assurer que les tags sont bien une liste de strings si fournis
     @validator("tags", pre=True, always=True)
