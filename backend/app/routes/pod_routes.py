@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import logging
@@ -91,7 +91,7 @@ async def create_pod(
         )
 
         # Création du Pod en base
-        return pod_service.create_pod(
+        pod = pod_service.create_pod(
             db=db,
             title=title,
             description=description,
@@ -99,6 +99,9 @@ async def create_pod(
             audio_url=audio_url,
             owner_id=current_user.id
         )
+        
+        # Convertir l'objet ORM en modèle Pydantic
+        return pod_schema.Pod.model_validate(pod) if hasattr(pod_schema.Pod, 'model_validate') else pod_schema.Pod.from_orm(pod)
 
     except HTTPException as e:
         raise e
@@ -142,11 +145,14 @@ async def transcribe_pod(
             )
 
         # Appel service de transcription
-        return await transcription_service.transcribe_pod(
+        pod = await transcription_service.transcribe_pod(
             db=db,
             pod_id=pod_id,
             audio_url=db_pod.audio_file_url
         )
+        
+        # Convertir l'objet ORM en modèle Pydantic
+        return pod_schema.Pod.model_validate(pod) if hasattr(pod_schema.Pod, 'model_validate') else pod_schema.Pod.from_orm(pod)
 
     except HTTPException as e:
         raise e
@@ -174,7 +180,12 @@ async def get_all_pods(
     Récupère la liste de tous les Pods publics
     """
     try:
-        return pod_service.get_pods(db, skip=skip, limit=min(limit, 200))
+        pods = pod_service.get_pods(db, skip=skip, limit=min(limit, 200))
+        # Convertir la liste d'objets ORM en liste de modèles Pydantic
+        if hasattr(pod_schema.Pod, 'model_validate'):
+            return [pod_schema.Pod.model_validate(pod) for pod in pods]
+        else:
+            return [pod_schema.Pod.from_orm(pod) for pod in pods]
     except Exception as e:
         logger.error(f"Erreur récupération Pods : {str(e)}")
         raise HTTPException(
@@ -200,12 +211,17 @@ async def get_my_pods(
     Récupère la liste des Pods de l'utilisateur courant
     """
     try:
-        return pod_service.get_user_pods(
+        pods = pod_service.get_user_pods(
             db=db,
             user_id=current_user.id,
             skip=skip,
             limit=min(limit, 200)
         )
+        # Convertir la liste d'objets ORM en liste de modèles Pydantic
+        if hasattr(pod_schema.Pod, 'model_validate'):
+            return [pod_schema.Pod.model_validate(pod) for pod in pods]
+        else:
+            return [pod_schema.Pod.from_orm(pod) for pod in pods]
     except Exception as e:
         logger.error(f"Erreur récupération Pods utilisateur {current_user.id} : {str(e)}")
         raise HTTPException(
@@ -232,7 +248,9 @@ async def get_pod(
         pod = pod_service.get_pod(db, pod_id)
         if not pod:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pod introuvable")
-        return pod
+        
+        # Convertir l'objet ORM en modèle Pydantic
+        return pod_schema.Pod.model_validate(pod) if hasattr(pod_schema.Pod, 'model_validate') else pod_schema.Pod.from_orm(pod)
     except Exception as e:
         logger.error(f"Erreur récupération Pod {pod_id} : {str(e)}")
         raise HTTPException(
@@ -320,11 +338,14 @@ async def update_pod(
             )
             update_data["audio_file_url"] = audio_url
 
-        return pod_service.update_pod(
+        pod = pod_service.update_pod(
             db=db,
             pod_id=pod_id,
             update_data=update_data
         )
+        
+        # Convertir l'objet ORM en modèle Pydantic
+        return pod_schema.Pod.model_validate(pod) if hasattr(pod_schema.Pod, 'model_validate') else pod_schema.Pod.from_orm(pod)
 
     except HTTPException as e:
         raise e
