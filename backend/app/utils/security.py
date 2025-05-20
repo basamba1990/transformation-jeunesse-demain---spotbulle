@@ -41,10 +41,36 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     Crée un JWT access token avec les données fournies et une expiration.
     """
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
+    # Augmentation de la durée de validité par défaut à 24 heures (1440 minutes)
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=1440))
+    to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
+
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """
+    Crée un JWT refresh token avec les données fournies et une expiration plus longue.
+    """
+    to_encode = data.copy()
+    # Durée de validité par défaut de 7 jours pour le refresh token
+    expire = datetime.utcnow() + (expires_delta or timedelta(days=7))
+    to_encode.update({"exp": expire, "type": "refresh"})
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return encoded_jwt
+
+def decode_token(token: str):
+    """
+    Décode un token JWT et retourne son payload.
+    """
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
@@ -63,6 +89,16 @@ async def get_current_user(
         email: Optional[str] = payload.get("sub")
         if email is None:
             raise credentials_exception
+        
+        # Vérifier que c'est bien un token d'accès
+        token_type = payload.get("type")
+        if token_type != "access":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token type",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+            
         token_data = token_schema.TokenData(email=email)
     except JWTError:
         raise credentials_exception
