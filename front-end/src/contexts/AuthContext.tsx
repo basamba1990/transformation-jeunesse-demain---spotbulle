@@ -29,7 +29,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }));
     },
     logout: () => {
-      localStorage.removeItem("spotbulle_token");
+      // Utiliser la fonction de déconnexion du service d'authentification
+      // pour s'assurer que tous les tokens sont supprimés
+      authService.logout();
       setState(prev => ({ 
         ...prev, 
         isAuthenticated: false, 
@@ -44,15 +46,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const token = localStorage.getItem("spotbulle_token");
       if (token) {
         try {
+          console.log("Vérification de l'authentification avec le token existant");
           const user = await authService.getCurrentUser();
+          console.log("Utilisateur authentifié:", user);
           setState(prev => ({ 
             ...prev, 
             isAuthenticated: true, 
             user, 
+            token,
             isLoading: false 
           }));
-        } catch {
-          setState(prev => ({ ...prev, isLoading: false }));
+        } catch (error) {
+          console.error("Erreur lors de la vérification de l'authentification:", error);
+          // En cas d'erreur, essayer de rafraîchir le token
+          try {
+            console.log("Tentative de rafraîchissement du token");
+            const newToken = await authService.refreshToken();
+            // Réessayer avec le nouveau token
+            const user = await authService.getCurrentUser();
+            setState(prev => ({ 
+              ...prev, 
+              isAuthenticated: true, 
+              user, 
+              token: newToken,
+              isLoading: false 
+            }));
+          } catch (refreshError) {
+            console.error("Échec du rafraîchissement du token:", refreshError);
+            // Si le rafraîchissement échoue, déconnecter l'utilisateur
+            authService.logout();
+            setState(prev => ({ 
+              ...prev, 
+              isAuthenticated: false, 
+              user: null, 
+              token: null,
+              isLoading: false 
+            }));
+          }
         }
       } else {
         setState(prev => ({ ...prev, isLoading: false }));
