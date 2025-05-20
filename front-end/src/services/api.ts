@@ -7,18 +7,15 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ||
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  // Ajout de withCredentials pour permettre l'envoi des cookies cross-origin
+  headers: { "Content-Type": "application/json" },
   withCredentials: true,
+  timeout: 10000,
 });
 
 // Fonction pour stocker les tokens
 const storeTokens = (accessToken: string, refreshToken: string) => {
   localStorage.setItem("spotbulle_token", accessToken);
   localStorage.setItem("spotbulle_refresh_token", refreshToken);
-  console.log("Tokens stockés dans localStorage");
 };
 
 // Intercepteur pour ajouter le token JWT
@@ -26,10 +23,6 @@ apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("spotbulle_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    // Ajout d'un log pour débogage
-    console.log("Token envoyé dans la requête:", token.substring(0, 15) + "...");
-  } else {
-    console.log("Aucun token trouvé dans localStorage");
   }
   return config;
 });
@@ -40,28 +33,19 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    // Si l'erreur est 401 et que la requête n'a pas déjà été retentée
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
       try {
-        // Tenter de rafraîchir le token
         const newToken = await authService.refreshToken();
-        
-        // Mettre à jour le token dans la requête originale
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        
-        // Retenter la requête originale avec le nouveau token
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // Si le rafraîchissement échoue, rediriger vers la page de connexion
-        console.error("Échec du rafraîchissement du token:", refreshError);
         authService.logout();
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }
-    
     return Promise.reject(error);
   }
 );
@@ -135,7 +119,7 @@ export const discService = {
   }
 };
 
-// Services Pod
+// Services Pod corrigés
 export const podService = {
   fetchAll: async (): Promise<IPod[]> => {
     const response = await apiClient.get("/pods");
@@ -157,72 +141,34 @@ export const podService = {
 
   createPod: async (data: FormData): Promise<IPod> => {
     const response = await apiClient.post("/pods", data, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+      headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
   }
 };
 
-// Service d'authentification
+// Service d'authentification corrigé
 export const authService = {
-  // Signature pour accepter un objet avec email et password
   loginUser: async (userData: { email: string; password: string }): Promise<string> => {
     const params = new URLSearchParams();
     params.append("username", userData.email);
     params.append("password", userData.password);
     
-    try {
-      const response = await apiClient.post("/auth/token", params, {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      });
-      
-      // Stocker les deux tokens
-      storeTokens(response.data.access_token, response.data.refresh_token);
-      
-      // Ajout d'un log pour débogage
-      console.log("Token reçu du backend:", response.data.access_token.substring(0, 15) + "...");
-      
-      return response.data.access_token;
-    } catch (error) {
-      console.error("Erreur de connexion:", error);
-      throw error;
-    }
+    const response = await apiClient.post("/auth/token", params, {
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    });
+    
+    storeTokens(response.data.access_token, response.data.refresh_token);
+    return response.data.access_token;
   },
 
-  // Nouvelle fonction pour rafraîchir le token
   refreshToken: async (): Promise<string> => {
     const refreshToken = localStorage.getItem("spotbulle_refresh_token");
-    if (!refreshToken) {
-      console.error("Échec du rafraîchissement du token: Aucun refresh token disponible");
-      throw new Error("No refresh token available");
-    }
+    if (!refreshToken) throw new Error("No refresh token available");
     
-    try {
-      const response = await axios.post(`${API_BASE_URL}/auth/refresh`, 
-        { refresh_token: refreshToken },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
-      
-      // Stocker les nouveaux tokens
-      storeTokens(response.data.access_token, response.data.refresh_token);
-      console.log("Token rafraîchi avec succès");
-      
-      return response.data.access_token;
-    } catch (error) {
-      console.error("Erreur lors du rafraîchissement du token:", error);
-      // En cas d'échec, déconnecter l'utilisateur
-      authService.logout();
-      throw error;
-    }
+    const response = await apiClient.post("/auth/refresh", { refresh_token: refreshToken });
+    storeTokens(response.data.access_token, response.data.refresh_token);
+    return response.data.access_token;
   },
 
   getCurrentUser: async (): Promise<IUser> => {
@@ -268,9 +214,7 @@ export const profileService = {
     formData.append("file", file);
     
     const response = await apiClient.post("/profiles/profiles/me/picture", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+      headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data.profile_picture_url;
   }
