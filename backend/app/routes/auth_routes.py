@@ -74,6 +74,7 @@ async def login_for_access_token(
 
     logger.info(f"Connexion réussie pour {form_data.username}, génération du token")
     
+    # Génération de l'access token (durée augmentée à 24h dans security.py)
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
         data={
@@ -84,14 +85,102 @@ async def login_for_access_token(
         expires_delta=access_token_expires
     )
     
-    logger.info(f"Token généré avec succès pour {form_data.username}")
+    # Génération du refresh token (7 jours)
+    refresh_token_expires = timedelta(days=7)
+    refresh_token = security.create_refresh_token(
+        data={
+            "sub": user.email,
+            "user_id": user.id
+        },
+        expires_delta=refresh_token_expires
+    )
+    
+    logger.info(f"Tokens générés avec succès pour {form_data.username}")
     
     return {
         "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer",
         "user_id": user.id,
         "is_superuser": user.is_superuser
     }
+
+@router.post(
+    "/refresh",
+    response_model=token_schema.Token,
+    summary="Rafraîchir le token",
+    description="Génère un nouveau token d'accès à partir d'un refresh token valide"
+)
+@auth_limiter.limit("20/minute")
+async def refresh_access_token(
+    request: Request,
+    refresh_token_data: token_schema.RefreshToken,
+    db: Session = Depends(get_db)
+):
+    """
+    Génère un nouveau token d'accès à partir d'un refresh token valide
+    """
+    try:
+        # Vérifier la validité du refresh token
+        payload = security.decode_token(refresh_token_data.refresh_token)
+        
+        # Vérifier que c'est bien un refresh token
+        if payload.get("type") != "refresh":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token type",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        email = payload.get("sub")
+        user_id = payload.get("user_id")
+        
+        if not email or not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token data",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Vérifier que l'utilisateur existe toujours
+        user = user_service.get_user_by_email(db, email=email)
+        if not user or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found or inactive",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Générer un nouveau access token
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = security.create_access_token(
+            data={
+                "sub": user.email,
+                "user_id": user.id,
+                "is_superuser": user.is_superuser
+            },
+            expires_delta=access_token_expires
+        )
+        
+        logger.info(f"Token rafraîchi avec succès pour {email}")
+        
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token_data.refresh_token,  # Renvoyer le même refresh token
+            "token_type": "bearer",
+            "user_id": user.id,
+            "is_superuser": user.is_superuser
+        }
+    
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"Erreur lors du rafraîchissement du token: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 @router.post(
     "/register",
