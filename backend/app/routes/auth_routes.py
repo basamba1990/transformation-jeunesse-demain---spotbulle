@@ -42,7 +42,6 @@ async def login_for_access_token(
     """
     Authentifie un utilisateur avec email/mot de passe et retourne un token JWT
     """
-    # Logs détaillés pour le débogage
     logger.info(f"Tentative de connexion pour l'email: {form_data.username}")
     
     user = user_service.get_user_by_email(db, email=form_data.username)
@@ -54,8 +53,6 @@ async def login_for_access_token(
             detail="Identifiants incorrects (utilisateur non trouvé)",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    logger.info(f"Utilisateur trouvé, vérification du mot de passe pour {form_data.username}")
     
     if not security.verify_password(form_data.password, user.hashed_password):
         logger.warning(f"Échec de connexion: Mot de passe incorrect pour {form_data.username}")
@@ -72,9 +69,6 @@ async def login_for_access_token(
             detail="Compte utilisateur désactivé"
         )
 
-    logger.info(f"Connexion réussie pour {form_data.username}, génération du token")
-    
-    # Génération de l'access token (durée augmentée à 24h dans security.py)
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
         data={
@@ -85,7 +79,6 @@ async def login_for_access_token(
         expires_delta=access_token_expires
     )
     
-    # Génération du refresh token (7 jours)
     refresh_token_expires = timedelta(days=7)
     refresh_token = security.create_refresh_token(
         data={
@@ -94,8 +87,6 @@ async def login_for_access_token(
         },
         expires_delta=refresh_token_expires
     )
-    
-    logger.info(f"Tokens générés avec succès pour {form_data.username}")
     
     return {
         "access_token": access_token,
@@ -117,14 +108,9 @@ async def refresh_access_token(
     refresh_token_data: token_schema.RefreshToken,
     db: Session = Depends(get_db)
 ):
-    """
-    Génère un nouveau token d'accès à partir d'un refresh token valide
-    """
     try:
-        # Vérifier la validité du refresh token
         payload = security.decode_token(refresh_token_data.refresh_token)
         
-        # Vérifier que c'est bien un refresh token
         if payload.get("type") != "refresh":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -142,7 +128,6 @@ async def refresh_access_token(
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        # Vérifier que l'utilisateur existe toujours
         user = user_service.get_user_by_email(db, email=email)
         if not user or not user.is_active:
             raise HTTPException(
@@ -151,7 +136,6 @@ async def refresh_access_token(
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        # Générer un nouveau access token
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = security.create_access_token(
             data={
@@ -162,18 +146,14 @@ async def refresh_access_token(
             expires_delta=access_token_expires
         )
         
-        logger.info(f"Token rafraîchi avec succès pour {email}")
-        
         return {
             "access_token": access_token,
-            "refresh_token": refresh_token_data.refresh_token,  # Renvoyer le même refresh token
+            "refresh_token": refresh_token_data.refresh_token,
             "token_type": "bearer",
             "user_id": user.id,
             "is_superuser": user.is_superuser
         }
     
-    except HTTPException as e:
-        raise e
     except Exception as e:
         logger.error(f"Erreur lors du rafraîchissement du token: {str(e)}")
         raise HTTPException(
@@ -203,20 +183,21 @@ def register_user(
         )
 
     try:
-        # user_service.create_user retourne probablement un objet ORM (modèle SQLAlchemy)
         created_user_orm = user_service.create_user(db=db, user=user)
-        
-        # CORRECTION : Utiliser from_orm au lieu de model_validate pour Pydantic v1
-        return user_schema.User.from_orm(created_user_orm)
+        return user_schema.User(
+            id=created_user_orm.id,
+            email=created_user_orm.email,
+            full_name=created_user_orm.full_name,
+            created_at=created_user_orm.created_at,
+            updated_at=created_user_orm.updated_at
+        )
     
-    except HTTPException as http_exc: # Rediffuser les exceptions HTTP déjà gérées
-        raise http_exc
     except Exception as e:
         db.rollback()
-        print(f"Erreur détaillée lors de la création du compte: {e}") # Log de l'erreur détaillée
+        logger.error(f"Erreur création compte: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur interne lors de la création du compte: {str(e)}" # Inclure le message d'erreur
+            detail="Erreur interne lors de la création du compte"
         )
 
 @router.get(
@@ -228,7 +209,4 @@ def register_user(
 async def get_current_user(
     current_user: user_schema.User = Depends(security.get_current_active_user)
 ):
-    """
-    Retourne les données du compte de l'utilisateur authentifié
-    """
     return current_user
