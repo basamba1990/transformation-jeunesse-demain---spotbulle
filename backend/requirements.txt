@@ -28,4 +28,5 @@ alembic
 slowapi
 python-multipart
 requests
+ffmpeg # pour l'extraction audio)
 
