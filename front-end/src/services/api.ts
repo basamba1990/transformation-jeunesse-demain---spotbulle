@@ -12,6 +12,13 @@ const apiClient = axios.create({
   },
 });
 
+// Fonction pour stocker les tokens
+const storeTokens = (accessToken: string, refreshToken: string) => {
+  localStorage.setItem("spotbulle_token", accessToken);
+  localStorage.setItem("spotbulle_refresh_token", refreshToken);
+  console.log("Tokens stockés dans localStorage");
+};
+
 // Intercepteur pour ajouter le token JWT
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("spotbulle_token");
@@ -24,6 +31,38 @@ apiClient.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Intercepteur pour gérer les erreurs 401 (token expiré)
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // Si l'erreur est 401 et que la requête n'a pas déjà été retentée
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        // Tenter de rafraîchir le token
+        const newToken = await authService.refreshToken();
+        
+        // Mettre à jour le token dans la requête originale
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        
+        // Retenter la requête originale avec le nouveau token
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        // Si le rafraîchissement échoue, rediriger vers la page de connexion
+        console.error("Échec du rafraîchissement du token:", refreshError);
+        authService.logout();
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 // Interfaces principales
 export interface IUser {
@@ -138,10 +177,43 @@ export const authService = {
       },
     });
     
+    // Stocker les deux tokens
+    storeTokens(response.data.access_token, response.data.refresh_token);
+    
     // Ajout d'un log pour débogage
     console.log("Token reçu du backend:", response.data.access_token.substring(0, 15) + "...");
     
     return response.data.access_token;
+  },
+
+  // Nouvelle fonction pour rafraîchir le token
+  refreshToken: async (): Promise<string> => {
+    const refreshToken = localStorage.getItem("spotbulle_refresh_token");
+    if (!refreshToken) {
+      throw new Error("No refresh token available");
+    }
+    
+    try {
+      const response = await axios.post(`${API_BASE_URL}/auth/auth/refresh`, 
+        { refresh_token: refreshToken },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      
+      // Stocker les nouveaux tokens
+      storeTokens(response.data.access_token, response.data.refresh_token);
+      console.log("Token rafraîchi avec succès");
+      
+      return response.data.access_token;
+    } catch (error) {
+      console.error("Erreur lors du rafraîchissement du token:", error);
+      // En cas d'échec, déconnecter l'utilisateur
+      authService.logout();
+      throw error;
+    }
   },
 
   getCurrentUser: async (): Promise<IUser> => {
@@ -160,7 +232,8 @@ export const authService = {
 
   logout: (): void => {
     localStorage.removeItem("spotbulle_token");
-    console.log("Token supprimé du localStorage");
+    localStorage.removeItem("spotbulle_refresh_token");
+    console.log("Tokens supprimés du localStorage");
   }
 };
 
