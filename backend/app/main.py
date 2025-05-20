@@ -63,12 +63,12 @@ async def health_check():
 API_PREFIX = "/api/v1"
 
 route_config = [
-    (auth_routes.router, "/auth", ["Authentication"]),
+    (auth_routes.router, "", ["Authentication"]), # ✅ Prefix correct
     (user_routes.router, "/users", ["Users"]),
     (pod_routes.router, "/pods", ["Pods"]),
     (profile_routes.router, "/profiles", ["Profiles"]),
     (ia_routes.router, "/ia", ["IA"]),
-    (video_routes.router, "/videos", ["Videos"])  # Ajout du nouveau router pour les vidÃ©os
+    (video_routes.router, "/videos", ["Videos"])
 ]
 
 for router, path, tags in route_config:
