@@ -10,6 +10,8 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  // Ajout de withCredentials pour permettre l'envoi des cookies cross-origin
+  withCredentials: true,
 });
 
 // Fonction pour stocker les tokens
@@ -118,17 +120,17 @@ export interface DISCResultsResponse {
 // Services DISC
 export const discService = {
   getQuestionnaire: async (): Promise<DISCQuestion[]> => {
-    const response = await apiClient.get("/profiles/profiles/disc/questionnaire");
+    const response = await apiClient.get("/profiles/disc/questionnaire");
     return response.data;
   },
   
   submitAssessment: async (data: DISCAssessmentRequest): Promise<DISCResultsResponse> => {
-    const response = await apiClient.post("/profiles/profiles/disc/assess", data);
+    const response = await apiClient.post("/profiles/disc/assess", data);
     return response.data;
   },
   
   getResults: async (): Promise<DISCResultsResponse> => {
-    const response = await apiClient.get("/profiles/profiles/disc/results");
+    const response = await apiClient.get("/profiles/disc/results");
     return response.data;
   }
 };
@@ -171,35 +173,42 @@ export const authService = {
     params.append("username", userData.email);
     params.append("password", userData.password);
     
-    const response = await apiClient.post("/auth/auth/token", params, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
-    
-    // Stocker les deux tokens
-    storeTokens(response.data.access_token, response.data.refresh_token);
-    
-    // Ajout d'un log pour débogage
-    console.log("Token reçu du backend:", response.data.access_token.substring(0, 15) + "...");
-    
-    return response.data.access_token;
+    try {
+      const response = await apiClient.post("/auth/token", params, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+      
+      // Stocker les deux tokens
+      storeTokens(response.data.access_token, response.data.refresh_token);
+      
+      // Ajout d'un log pour débogage
+      console.log("Token reçu du backend:", response.data.access_token.substring(0, 15) + "...");
+      
+      return response.data.access_token;
+    } catch (error) {
+      console.error("Erreur de connexion:", error);
+      throw error;
+    }
   },
 
   // Nouvelle fonction pour rafraîchir le token
   refreshToken: async (): Promise<string> => {
     const refreshToken = localStorage.getItem("spotbulle_refresh_token");
     if (!refreshToken) {
+      console.error("Échec du rafraîchissement du token: Aucun refresh token disponible");
       throw new Error("No refresh token available");
     }
     
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/auth/refresh`, 
+      const response = await axios.post(`${API_BASE_URL}/auth/refresh`, 
         { refresh_token: refreshToken },
         {
           headers: {
             "Content-Type": "application/json",
           },
+          withCredentials: true,
         }
       );
       
@@ -217,8 +226,13 @@ export const authService = {
   },
 
   getCurrentUser: async (): Promise<IUser> => {
-    const response = await apiClient.get("/auth/auth/me");
-    return response.data;
+    try {
+      const response = await apiClient.get("/auth/me");
+      return response.data;
+    } catch (error) {
+      console.error("Erreur lors de la récupération de l'utilisateur courant:", error);
+      throw error;
+    }
   },
 
   register: async (userData: { 
@@ -226,7 +240,7 @@ export const authService = {
     password: string; 
     full_name: string 
   }): Promise<IUser> => {
-    const response = await apiClient.post("/auth/auth/register", userData);
+    const response = await apiClient.post("/auth/register", userData);
     return response.data;
   },
 
