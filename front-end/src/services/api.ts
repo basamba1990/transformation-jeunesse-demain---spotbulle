@@ -138,25 +138,25 @@ export const discService = {
 // Services Pod
 export const podService = {
   fetchAll: async (): Promise<IPod[]> => {
-    const response = await apiClient.get("/pods/pods");
+    const response = await apiClient.get("/pods");
     return response.data;
   },
 
   fetchMyPods: async (): Promise<IPod[]> => {
-    const response = await apiClient.get("/pods/pods/me");
+    const response = await apiClient.get("/pods/me");
     return response.data;
   },
 
   deletePod: async (id: number): Promise<void> => {
-    await apiClient.delete(`/pods/pods/${id}`);
+    await apiClient.delete(`/pods/${id}`);
   },
 
   transcribePod: async (id: number): Promise<void> => {
-    await apiClient.post(`/pods/pods/${id}/transcribe`);
+    await apiClient.post(`/pods/${id}/transcribe`);
   },
 
   createPod: async (data: FormData): Promise<IPod> => {
-    const response = await apiClient.post("/pods/pods", data, {
+    const response = await apiClient.post("/pods", data, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
