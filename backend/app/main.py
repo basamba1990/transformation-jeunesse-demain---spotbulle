@@ -36,11 +36,12 @@ class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
 # Configuration CORS unique
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://mentorat-intelligent-spotbulle-qzfh.onrender.com"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["Content-Range", "X-Total-Count"]
-)
+ )
 
 # Configuration du rate limiter
 app.state.limiter = limiter
