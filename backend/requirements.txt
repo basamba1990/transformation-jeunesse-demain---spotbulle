@@ -11,7 +11,7 @@ psycopg2-binary
 # Pour une base de données SQLite asynchrone (si vous adaptez database.py pour l'asynchrone) :
 # aiosqlite
 # Pour l'intégration OpenAI (comme ébauché dans ia_service.py)
-openai
+openai==0.28
 supabase
 scikit-learn # Ajouté pour la similarité cosinus et autres utilitaires ML
 sentence-transformers # Ajouté pour une alternative d'embeddings si OpenAI n'est pas souhaité ou pour des tests
