@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 video_router_limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(
-    prefix="/videos",
+    prefix="",
     tags=["Videos"],
     dependencies=[Depends(security.get_current_active_user)],
     responses={
