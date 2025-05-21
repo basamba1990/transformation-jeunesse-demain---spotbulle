@@ -15,7 +15,7 @@ from slowapi.util import get_remote_address
 profile_router_limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(
-    prefix="/profiles",
+    prefix="",
     tags=["Profiles & DISC"],
     dependencies=[Depends(security.get_current_active_user)]
 )
