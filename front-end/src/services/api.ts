@@ -119,56 +119,93 @@ export const discService = {
   }
 };
 
-// Services Pod corrigés
+// Services Pod corrigés avec gestion d'erreur améliorée
 export const podService = {
   fetchAll: async (): Promise<IPod[]> => {
-    const response = await apiClient.get("/pods");
-    return response.data;
+    try {
+      const response = await apiClient.get("/pods");
+      return response.data;
+    } catch (error) {
+      console.error("Erreur récupération des pods:", error);
+      throw new Error("Impossible de charger les pods");
+    }
   },
 
   fetchMyPods: async (): Promise<IPod[]> => {
-    const response = await apiClient.get("/pods/me");
-    return response.data;
+    try {
+      const response = await apiClient.get("/pods/me");
+      return response.data;
+    } catch (error) {
+      console.error("Erreur récupération des pods utilisateur:", error);
+      throw new Error("Impossible de charger vos pods");
+    }
   },
 
   deletePod: async (id: number): Promise<void> => {
-    await apiClient.delete(`/pods/${id}`);
+    try {
+      await apiClient.delete(`/pods/${id}`);
+    } catch (error) {
+      console.error("Erreur suppression pod:", error);
+      throw new Error("Échec de la suppression du pod");
+    }
   },
 
   transcribePod: async (id: number): Promise<void> => {
-    await apiClient.post(`/pods/${id}/transcribe`);
+    try {
+      await apiClient.post(`/pods/${id}/transcribe`);
+    } catch (error) {
+      console.error("Erreur transcription pod:", error);
+      throw new Error("Échec de la transcription audio");
+    }
   },
 
   createPod: async (data: FormData): Promise<IPod> => {
-    const response = await apiClient.post("/pods", data, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response.data;
+    try {
+      console.log("Début de la création du pod...");
+      const response = await apiClient.post("/pods", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      console.log("Pod créé avec succès:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Erreur création pod:", error);
+      throw new Error("Échec de la création du pod");
+    }
   }
 };
 
-// Service d'authentification corrigé
+// Service d'authentification avec gestion d'erreur améliorée
 export const authService = {
   loginUser: async (userData: { email: string; password: string }): Promise<string> => {
-    const params = new URLSearchParams();
-    params.append("username", userData.email);
-    params.append("password", userData.password);
-    
-    const response = await apiClient.post("/auth/token", params, {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    });
-    
-    storeTokens(response.data.access_token, response.data.refresh_token);
-    return response.data.access_token;
+    try {
+      const params = new URLSearchParams();
+      params.append("username", userData.email);
+      params.append("password", userData.password);
+      
+      const response = await apiClient.post("/auth/token", params, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      });
+      
+      storeTokens(response.data.access_token, response.data.refresh_token);
+      return response.data.access_token;
+    } catch (error) {
+      console.error("Erreur connexion:", error);
+      throw new Error("Identifiants incorrects ou problème de connexion");
+    }
   },
 
   refreshToken: async (): Promise<string> => {
-    const refreshToken = localStorage.getItem("spotbulle_refresh_token");
-    if (!refreshToken) throw new Error("No refresh token available");
-    
-    const response = await apiClient.post("/auth/refresh", { refresh_token: refreshToken });
-    storeTokens(response.data.access_token, response.data.refresh_token);
-    return response.data.access_token;
+    try {
+      const refreshToken = localStorage.getItem("spotbulle_refresh_token");
+      if (!refreshToken) throw new Error("Aucun token de rafraîchissement");
+      
+      const response = await apiClient.post("/auth/refresh", { refresh_token: refreshToken });
+      storeTokens(response.data.access_token, response.data.refresh_token);
+      return response.data.access_token;
+    } catch (error) {
+      console.error("Erreur rafraîchissement token:", error);
+      throw new Error("Session expirée, veuillez vous reconnecter");
+    }
   },
 
   getCurrentUser: async (): Promise<IUser> => {
@@ -176,8 +213,8 @@ export const authService = {
       const response = await apiClient.get("/auth/me");
       return response.data;
     } catch (error) {
-      console.error("Erreur lors de la récupération de l'utilisateur courant:", error);
-      throw error;
+      console.error("Erreur récupération utilisateur:", error);
+      throw new Error("Impossible de charger le profil utilisateur");
     }
   },
 
@@ -186,37 +223,57 @@ export const authService = {
     password: string; 
     full_name: string 
   }): Promise<IUser> => {
-    const response = await apiClient.post("/auth/register", userData);
-    return response.data;
+    try {
+      const response = await apiClient.post("/auth/register", userData);
+      return response.data;
+    } catch (error) {
+      console.error("Erreur inscription:", error);
+      throw new Error("Échec de l'inscription - vérifiez les données saisies");
+    }
   },
 
   logout: (): void => {
     localStorage.removeItem("spotbulle_token");
     localStorage.removeItem("spotbulle_refresh_token");
-    console.log("Tokens supprimés du localStorage");
+    console.log("Déconnexion réussie");
   }
 };
 
-// Service de profil
+// Service de profil avec gestion améliorée
 export const profileService = {
   getMyProfile: async (): Promise<IProfile> => {
-    const response = await apiClient.get("/profiles/profiles/me");
-    return response.data;
+    try {
+      const response = await apiClient.get("/profiles/profiles/me");
+      return response.data;
+    } catch (error) {
+      console.error("Erreur récupération profil:", error);
+      throw new Error("Impossible de charger votre profil");
+    }
   },
 
   updateProfile: async (data: Partial<ProfileData>): Promise<IProfile> => {
-    const response = await apiClient.put("/profiles/profiles/me", data);
-    return response.data;
+    try {
+      const response = await apiClient.put("/profiles/profiles/me", data);
+      return response.data;
+    } catch (error) {
+      console.error("Erreur mise à jour profil:", error);
+      throw new Error("Échec de la mise à jour du profil");
+    }
   },
 
   uploadProfilePicture: async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    
-    const response = await apiClient.post("/profiles/profiles/me/picture", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response.data.profile_picture_url;
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const response = await apiClient.post("/profiles/profiles/me/picture", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data.profile_picture_url;
+    } catch (error) {
+      console.error("Erreur upload photo:", error);
+      throw new Error("Échec de l'envoi de la photo de profil");
+    }
   }
 };
 
