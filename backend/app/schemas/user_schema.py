@@ -1,34 +1,34 @@
 from typing import Optional
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, EmailStr, Field
+from pydantic.config import ConfigDict
 from datetime import datetime
 
-# Schéma pour les prompts IA
-class UserPrompt(BaseModel):
-    prompt_text: str = Field(
-        ..., 
-        min_length=1, 
-        max_length=1000,
-        description="Prompt utilisateur pour les générations IA"
+# Configuration globale avec validation stricte
+class StrictBaseModel(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        from_attributes=True,
+        json_encoders={datetime: lambda v: v.isoformat()}
     )
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "prompt_text": "Explique-moi les enjeux climatiques actuels..."
-            }
-        }
+# --------------------------------------------------
+# Schémas Utilisateur
+# --------------------------------------------------
 
-# Schémas utilisateur existants
-class UserBase(BaseModel):
+class UserBase(StrictBaseModel):
     email: EmailStr
     full_name: str = Field(..., min_length=2, max_length=100)
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=8, max_length=128)
+    password: str = Field(..., 
+        min_length=8, 
+        max_length=128,
+        description="Mot de passe fort requis"
+    )
     is_active: bool = Field(default=True)
     is_superuser: bool = Field(default=False)
 
-class UserUpdate(UserBase):
+class UserUpdate(StrictBaseModel):
     email: Optional[EmailStr] = None
     full_name: Optional[str] = Field(None, min_length=2, max_length=100)
     password: Optional[str] = Field(None, min_length=8, max_length=128)
@@ -44,8 +44,15 @@ class User(UserBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+# --------------------------------------------------
+# Schémas IA
+# --------------------------------------------------
+
+class UserPrompt(StrictBaseModel):
+    prompt_text: str = Field(
+        ..., 
+        min_length=1, 
+        max_length=1000,
+        description="Entrée utilisateur pour le traitement IA",
+        json_schema_extra={"example": {"prompt_text": "Comment développer mon projet professionnel ?"}}
+    )
