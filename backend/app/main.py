@@ -60,11 +60,11 @@ API_PREFIX = "/api/v1"
 
 route_config = [
     (auth_routes.router, "", ["Authentication"]),  # Correction ici
-    (user_routes.router, "/users", ["Users"]),
+    (user_routes.router, "", ["Users"]),
     (pod_routes.router, "", ["Pods"]),
-    (profile_routes.router, "/profiles", ["Profiles"]),
-    (ia_routes.router, "/ia", ["IA"]),
-    (video_routes.router, "/videos", ["Videos"])
+    (profile_routes.router, "", ["Profiles"]),
+    (ia_routes.router, "", ["IA"]),
+    (video_routes.router, "", ["Videos"])
 ]
 
 for router, path, tags in route_config:
