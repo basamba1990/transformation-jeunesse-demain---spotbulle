@@ -1,4 +1,3 @@
-# backend/app/schemas/user_schema.py
 from typing import Optional
 from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
@@ -16,6 +15,10 @@ class UserUpdate(UserBase):
     email: Optional[EmailStr] = None
     full_name: Optional[str] = Field(None, min_length=2, max_length=100)
     password: Optional[str] = Field(None, min_length=8, max_length=128)
+
+class UserUpdateByAdmin(UserUpdate):
+    is_active: Optional[bool] = None
+    is_superuser: Optional[bool] = None
 
 class User(UserBase):
     id: int
