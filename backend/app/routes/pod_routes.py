@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 pod_router_limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(
-    prefix="/pods",
+    prefix="",
     tags=["Pods"],
     dependencies=[Depends(security.get_current_active_user)],
     responses={
