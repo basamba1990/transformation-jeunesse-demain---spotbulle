@@ -1,11 +1,8 @@
-# Fonctions CRUD (Create, Read, Update, Delete) pour le modèle User
-
 from sqlalchemy.orm import Session
 from typing import Optional, List
-
 from ..models import user_model
 from ..schemas import user_schema
-from ..utils import security # Pour le hachage du mot de passe
+from ..utils import security
 
 def get_user(db: Session, user_id: int) -> Optional[user_model.User]:
     return db.query(user_model.User).filter(user_model.User.id == user_id).first()
@@ -21,7 +18,9 @@ def create_user(db: Session, user: user_schema.UserCreate) -> user_model.User:
     db_user = user_model.User(
         email=user.email,
         hashed_password=hashed_password,
-        full_name=user.full_name
+        full_name=user.full_name,
+        is_active=True,
+        is_superuser=False
     )
     db.add(db_user)
     db.commit()
@@ -34,13 +33,15 @@ def update_user(db: Session, user_id: int, user_update: user_schema.UserUpdate) 
         return None
 
     update_data = user_update.model_dump(exclude_unset=True)
+    
     if "password" in update_data and update_data["password"]:
         hashed_password = security.get_password_hash(update_data["password"])
         db_user.hashed_password = hashed_password
-        del update_data["password"] # Ne pas essayer de mettre à jour le champ password directement
+        del update_data["password"]
 
     for key, value in update_data.items():
-        setattr(db_user, key, value)
+        if hasattr(db_user, key):
+            setattr(db_user, key, value)
 
     db.commit()
     db.refresh(db_user)
@@ -54,3 +55,8 @@ def delete_user(db: Session, user_id: int) -> Optional[user_model.User]:
     db.commit()
     return db_user
 
+def authenticate_user(db: Session, email: str, password: str) -> Optional[user_model.User]:
+    user = get_user_by_email(db, email)
+    if not user or not security.verify_password(password, user.hashed_password):
+        return None
+    return user
