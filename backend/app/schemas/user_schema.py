@@ -2,6 +2,23 @@ from typing import Optional
 from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
 
+# Schéma pour les prompts IA
+class UserPrompt(BaseModel):
+    prompt_text: str = Field(
+        ..., 
+        min_length=1, 
+        max_length=1000,
+        description="Prompt utilisateur pour les générations IA"
+    )
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "prompt_text": "Explique-moi les enjeux climatiques actuels..."
+            }
+        }
+
+# Schémas utilisateur existants
 class UserBase(BaseModel):
     email: EmailStr
     full_name: str = Field(..., min_length=2, max_length=100)
