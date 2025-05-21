@@ -7,6 +7,7 @@ from datetime import timedelta
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 import logging
+from typing import Annotated
 
 from ..schemas import token_schema, user_schema
 from ..services import user_service
@@ -14,11 +15,9 @@ from ..utils import security
 from ..database import get_db
 from ..config import settings
 
-# Configuration du logger
 logger = logging.getLogger("auth_routes")
 logger.setLevel(logging.INFO)
 
-# Limiteur local spécifique aux routes d'authentification
 auth_limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(
@@ -30,77 +29,39 @@ router = APIRouter(
 @router.post(
     "/token",
     response_model=token_schema.Token,
-    summary="Connexion utilisateur",
-    description="Authentifie un utilisateur et retourne un token JWT"
+    summary="Connexion utilisateur"
 )
 @auth_limiter.limit("5/minute")
 async def login_for_access_token(
     request: Request,
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db)
 ):
-    """
-    Authentifie un utilisateur avec email/mot de passe et retourne un token JWT
-    """
-    logger.info(f"Tentative de connexion pour l'email: {form_data.username}")
-    
-    user = user_service.get_user_by_email(db, email=form_data.username)
-    
-    if not user:
-        logger.warning(f"Échec de connexion: Utilisateur non trouvé pour l'email {form_data.username}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Identifiants incorrects (utilisateur non trouvé)",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    if not security.verify_password(form_data.password, user.hashed_password):
-        logger.warning(f"Échec de connexion: Mot de passe incorrect pour {form_data.username}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Identifiants incorrects (mot de passe invalide)",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    if not user.is_active:
-        logger.warning(f"Échec de connexion: Compte désactivé pour {form_data.username}")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Compte utilisateur désactivé"
-        )
+    """Authentification avec email/mot de passe"""
+    try:
+        user = user_service.authenticate_user(db, form_data.username, form_data.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Identifiants incorrects",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = security.create_access_token(
-        data={
-            "sub": user.email,
-            "user_id": user.id,
-            "is_superuser": user.is_superuser
-        },
-        expires_delta=access_token_expires
-    )
-    
-    refresh_token_expires = timedelta(days=7)
-    refresh_token = security.create_refresh_token(
-        data={
-            "sub": user.email,
-            "user_id": user.id
-        },
-        expires_delta=refresh_token_expires
-    )
-    
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-        "user_id": user.id,
-        "is_superuser": user.is_superuser
-    }
+        return security.create_tokens_response(user)
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Erreur de connexion: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur interne d'authentification"
+        )
 
 @router.post(
     "/refresh",
     response_model=token_schema.Token,
-    summary="Rafraîchir le token",
-    description="Génère un nouveau token d'accès à partir d'un refresh token valide"
+    summary="Rafraîchir le token"
 )
 @auth_limiter.limit("20/minute")
 async def refresh_access_token(
@@ -108,105 +69,62 @@ async def refresh_access_token(
     refresh_token_data: token_schema.RefreshToken,
     db: Session = Depends(get_db)
 ):
+    """Rafraîchissement de token JWT"""
     try:
-        payload = security.decode_token(refresh_token_data.refresh_token)
-        
-        if payload.get("type") != "refresh":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token type",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        
-        email = payload.get("sub")
-        user_id = payload.get("user_id")
-        
-        if not email or not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token data",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        
-        user = user_service.get_user_by_email(db, email=email)
-        if not user or not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found or inactive",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = security.create_access_token(
-            data={
-                "sub": user.email,
-                "user_id": user.id,
-                "is_superuser": user.is_superuser
-            },
-            expires_delta=access_token_expires
-        )
-        
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token_data.refresh_token,
-            "token_type": "bearer",
-            "user_id": user.id,
-            "is_superuser": user.is_superuser
-        }
+        user = security.validate_refresh_token(db, refresh_token_data.refresh_token)
+        return security.create_tokens_response(user)
     
+    except HTTPException as he:
+        raise he
     except Exception as e:
-        logger.error(f"Erreur lors du rafraîchissement du token: {str(e)}")
+        logger.error(f"Erreur rafraîchissement token: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate refresh token",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Impossible de rafraîchir le token"
         )
 
 @router.post(
     "/register",
     response_model=user_schema.User,
-    summary="Création de compte",
-    description="Enregistre un nouvel utilisateur dans le système"
+    summary="Création de compte"
 )
 @auth_limiter.limit("10/hour")
-def register_user(
+async def register_user(
     request: Request,
-    user: user_schema.UserCreate,
+    user_data: user_schema.UserCreate,
     db: Session = Depends(get_db)
 ):
-    existing_user = user_service.get_user_by_email(db, email=user.email)
-    
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email déjà enregistré"
-        )
-
+    """Enregistrement nouveau utilisateur"""
     try:
-        created_user_orm = user_service.create_user(db=db, user=user)
-        return user_schema.User(
-            id=created_user_orm.id,
-            email=created_user_orm.email,
-            full_name=created_user_orm.full_name,
-            created_at=created_user_orm.created_at,
-            updated_at=created_user_orm.updated_at
-        )
-    
+        db_user = user_service.get_user_by_email(db, user_data.email)
+        if db_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email déjà enregistré"
+            )
+
+        created_user = user_service.create_user(db, user_data)
+        return user_schema.User.model_validate(created_user)
+
+    except HTTPException as he:
+        raise he
     except Exception as e:
         db.rollback()
         logger.error(f"Erreur création compte: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erreur interne lors de la création du compte"
+            detail="Erreur lors de la création du compte"
         )
+    finally:
+        db.close()
 
 @router.get(
     "/me",
     response_model=user_schema.User,
-    summary="Profil utilisateur",
-    description="Récupère les informations de l'utilisateur connecté"
+    summary="Profil utilisateur"
 )
 async def get_current_user(
-    current_user: user_schema.User = Depends(security.get_current_active_user)
+    current_user: Annotated[user_schema.User, Depends(security.get_current_active_user)]
 ):
-    return current_user
+    """Récupération profil utilisateur"""
+    return current_user.model_dump()
