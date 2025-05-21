@@ -1,3 +1,4 @@
+# backend/app/schemas/user_schema.py
 from typing import Optional
 from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
@@ -23,9 +24,8 @@ class User(UserBase):
     created_at: datetime
     updated_at: datetime
 
-    # Configuration essentielle pour la conversion ORM
     class Config:
-        from_attributes = True  # Anciennement orm_mode=True pour Pydantic v1
+        from_attributes = True
         json_encoders = {
-            datetime: lambda v: v.isoformat()  # Formatage correct des dates
+            datetime: lambda v: v.isoformat()
         }
