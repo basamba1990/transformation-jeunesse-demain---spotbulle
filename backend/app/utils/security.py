@@ -1,5 +1,6 @@
+# backend/app/utils/security.py
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Annotated, Optional
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -7,116 +8,85 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-# Configuration (via Pydantic Settings)
 from ..config import settings
-
-# Base de données
 from ..database import get_db
-
-# Services et schémas
 from ..services import user_service
 from ..schemas import user_schema, token_schema
-from ..models.user_model import User
 
-# Contexte pour le hachage des mots de passe
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# OAuth2 – récupération du token depuis le header Authorization: Bearer <token>
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
-# ----------------------
-# Fonctions de sécurité
-# ----------------------
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Vérifie qu'un mot de passe en clair correspond à son hash."""
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password: str) -> str:
-    """Génère un hash sécurisé pour un mot de passe donné."""
     return pwd_context.hash(password)
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """
-    Crée un JWT access token avec les données fournies et une expiration.
-    """
-    to_encode = data.copy()
-    # Augmentation de la durée de validité par défaut à 24 heures (1440 minutes)
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=1440))
-    to_encode.update({"exp": expire, "type": "access"})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    return encoded_jwt
-
-def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """
-    Crée un JWT refresh token avec les données fournies et une expiration plus longue.
-    """
-    to_encode = data.copy()
-    # Durée de validité par défaut de 7 jours pour le refresh token
-    expire = datetime.utcnow() + (expires_delta or timedelta(days=7))
-    to_encode.update({"exp": expire, "type": "refresh"})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    return encoded_jwt
-
-def decode_token(token: str):
-    """
-    Décode un token JWT et retourne son payload.
-    """
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        return payload
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+def create_tokens(user: user_schema.User) -> token_schema.Token:
+    access_payload = {
+        "sub": user.email,
+        "user_id": user.id,
+        "is_superuser": user.is_superuser,
+        "type": "access"
+    }
+    refresh_payload = {
+        "sub": user.email,
+        "user_id": user.id,
+        "type": "refresh"
+    }
+    
+    access_token = jwt.encode(
+        {**access_payload, "exp": datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)},
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM
+    )
+    
+    refresh_token = jwt.encode(
+        {**refresh_payload, "exp": datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)},
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM
+    )
+    
+    return token_schema.Token(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer"
+    )
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    token: Annotated[str, Depends(oauth2_scheme)],
     db: Session = Depends(get_db)
-) -> Optional[User]:
-    """
-    Récupère l'utilisateur courant à partir du token JWT.
-    """
+) -> user_schema.User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        email: Optional[str] = payload.get("sub")
+        if payload.get("type") != "access":
+            raise credentials_exception
+            
+        email = payload.get("sub")
         if email is None:
             raise credentials_exception
-        
-        # Vérifier que c'est bien un token d'accès
-        token_type = payload.get("type")
-        if token_type != "access":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token type",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
             
-        token_data = token_schema.TokenData(email=email)
+        user = user_service.get_user_by_email(db, email)
+        if user is None:
+            raise credentials_exception
+            
+        return user_schema.User.model_validate(user)
+        
     except JWTError:
         raise credentials_exception
 
-    user = user_service.get_user_by_email(db, email=token_data.email)
-    if user is None:
-        raise credentials_exception
-    return user
-
 async def get_current_active_user(
-    current_user: User = Depends(get_current_user)
-) -> User:
-    """
-    Vérifie que l'utilisateur actuel est actif.
-    """
+    current_user: Annotated[user_schema.User, Depends(get_current_user)]
+) -> user_schema.User:
     if not current_user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Inactive user"
         )
     return current_user
