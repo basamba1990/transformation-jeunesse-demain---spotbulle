@@ -17,7 +17,7 @@ from slowapi.util import get_remote_address
 user_router_limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(
-    prefix="/users",
+    prefix="",
     tags=["Users"],
     dependencies=[Depends(security.get_current_active_user)] # Sécurise toutes les routes de ce routeur par défaut
 )
