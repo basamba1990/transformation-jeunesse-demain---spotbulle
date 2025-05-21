@@ -15,7 +15,7 @@ from slowapi.util import get_remote_address
 ia_router_limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(
-    prefix="/ia",
+    prefix="",
     tags=["IA"], # Tag en majuscule pour la cohérence
     dependencies=[Depends(security.get_current_active_user)], # Sécurise toutes les routes de ce routeur
     responses={404: {"description": "Not found"}}
