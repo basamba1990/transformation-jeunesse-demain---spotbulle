@@ -1,8 +1,15 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.orm import relationship
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-Base = declarative_base()
+# Import de la Base centralisée au lieu de créer une nouvelle instance
+from app.database import Base
+
+# Import conditionnel pour éviter les dépendances circulaires
+if TYPE_CHECKING:
+    from .profile_model import Profile
+    from .pod_model import Pod
 
 class User(Base):
     __tablename__ = "users"
@@ -16,9 +23,9 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relations
+    # Relations avec importation différée pour éviter les dépendances circulaires
     profile = relationship(
-        "Profile", 
+        lambda: Profile, 
         back_populates="user", 
         uselist=False, 
         cascade="all, delete-orphan",
@@ -26,7 +33,7 @@ class User(Base):
     )
     
     pods = relationship(
-        "Pod",
+        lambda: Pod,
         back_populates="owner",
         cascade="all, delete-orphan",
         lazy="dynamic"
