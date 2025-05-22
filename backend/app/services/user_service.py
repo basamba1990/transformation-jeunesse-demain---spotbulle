@@ -30,7 +30,7 @@ def create_user(db: Session, user: user_schema.UserCreate) -> User:
     db.refresh(db_user)
     return db_user
 
-def update_user(db: Session, user_id: int, user_update: user_schema.UserUpdate) -> Optional[user_model.User]:
+def update_user(db: Session, user_id: int, user_update: user_schema.UserUpdate) -> Optional[User]:
     db_user = get_user(db, user_id)
     if not db_user:
         return None
@@ -50,7 +50,7 @@ def update_user(db: Session, user_id: int, user_update: user_schema.UserUpdate) 
     db.refresh(db_user)
     return db_user
 
-def delete_user(db: Session, user_id: int) -> Optional[user_model.User]:
+def delete_user(db: Session, user_id: int) -> Optional[User]:
     db_user = get_user(db, user_id)
     if not db_user:
         return None
@@ -58,7 +58,7 @@ def delete_user(db: Session, user_id: int) -> Optional[user_model.User]:
     db.commit()
     return db_user
 
-def authenticate_user(db: Session, email: str, password: str) -> Optional[user_model.User]:
+def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
     user = get_user_by_email(db, email)
     if not user or not security.verify_password(password, user.hashed_password):
         return None
