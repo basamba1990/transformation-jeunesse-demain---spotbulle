@@ -5,10 +5,21 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import os
+
+# Importation explicite des modèles SQLAlchemy
+# Cette ligne est cruciale pour résoudre l'erreur "name 'Pod' is not defined"
+from .models import User, Profile, Pod
+
+# Importation des routes
 from .routes import auth_routes, user_routes, pod_routes, profile_routes, ia_routes, video_routes
 
 # Configuration initiale
 limiter = Limiter(key_func=get_remote_address)
+
+# Initialisation de la base de données (ajout recommandé)
+from .database import Base, engine
+# Création des tables si elles n'existent pas
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="spotbulle-mvp API",
@@ -59,7 +70,7 @@ async def health_check():
 API_PREFIX = "/api/v1"
 
 route_config = [
-    (auth_routes.router, "", ["Authentication"]),  # Correction ici
+    (auth_routes.router, "", ["Authentication"]),
     (user_routes.router, "", ["Users"]),
     (pod_routes.router, "", ["Pods"]),
     (profile_routes.router, "", ["Profiles"]),
@@ -73,6 +84,15 @@ for router, path, tags in route_config:
         prefix=f"{API_PREFIX}{path}",
         tags=tags
     )
+
+# Alternative: utiliser un événement de démarrage FastAPI
+# @app.on_event("startup")
+# async def startup_db_client():
+#     # Cette fonction s'exécute au démarrage de l'application
+#     # Assurez-vous que les modèles sont importés et que la base de données est initialisée
+#     from .models import User, Profile, Pod
+#     from .database import Base, engine
+#     Base.metadata.create_all(bind=engine)
 
 if __name__ == "__main__":
     import uvicorn
