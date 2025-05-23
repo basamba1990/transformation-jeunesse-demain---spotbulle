@@ -1,10 +1,8 @@
-# Modèles SQLAlchemy pour l'entité Profil Utilisateur (incluant le profil DISC)
-
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, JSON # Importations de base
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-from .database import Base # Utiliser la Base centralisée de app.database
+from ..database import Base # Correction: Utiliser le chemin relatif correct vers le module parent
 
 class Profile(Base):
     __tablename__ = "profiles"
@@ -26,4 +24,3 @@ class Profile(Base):
 
     def __repr__(self):
         return f"<Profile(id={self.id}, user_id={self.user_id}, disc_type='{self.disc_type}')>"
-
