@@ -8,8 +8,8 @@ from app.database import Base
 
 # Import conditionnel pour éviter les dépendances circulaires
 if TYPE_CHECKING:
-    from ..profile_model import Profile
-    from ..pod_model import Pod
+    from .profile_model import Profile
+    from .pod_model import Pod
 
 class User(Base):
     __tablename__ = "users"
