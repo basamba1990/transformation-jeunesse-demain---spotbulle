@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
 
-from .schemas import user_schema # Schémas Pydantic
-from .services import user_service # Services CRUD pour les utilisateurs
-from .utils import security # Pour get_current_active_user et les rôles
-from .database import get_db # Dépendance pour la session DB
+from ..schemas import user_schema # Schémas Pydantic
+from ..services import user_service # Services CRUD pour les utilisateurs
+from ..utils import security # Pour get_current_active_user et les rôles
+from ..database import get_db # Dépendance pour la session DB
 
 # Importer le limiteur global de main.py ou en créer un spécifique ici
 from slowapi import Limiter
