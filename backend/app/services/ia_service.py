@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 # --- Configuration SBERT & OpenAI ---
-from ..config import settings
+from .config import settings
 
 embedding_model_name = 'all-MiniLM-L6-v2'
 sbert_model = None
