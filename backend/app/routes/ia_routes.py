@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from typing import List, Any, Dict
 
-from .services import ia_service
-from .schemas import user_schema, ia_schema # Ajout de ia_schema pour les réponses structurées
-from .utils import security # Changement de l_import pour get_current_active_user
-from .database import get_db # Changement de l_import pour get_db
+from ..services import ia_service
+from ..schemas import user_schema, ia_schema # Ajout de ia_schema pour les réponses structurées
+from ..utils import security # Changement de l_import pour get_current_active_user
+from ..database import get_db # Changement de l_import pour get_db
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
