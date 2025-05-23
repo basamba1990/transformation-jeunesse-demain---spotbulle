@@ -8,16 +8,16 @@ import os
 
 # Importation explicite des modèles SQLAlchemy
 # Cette ligne est cruciale pour résoudre l'erreur "name 'Pod' is not defined"
-from .models import User, Profile, Pod
+from ..models import User, Profile, Pod
 
 # Importation des routes
-from .routes import auth_routes, user_routes, pod_routes, profile_routes, ia_routes, video_routes
+from ..routes import auth_routes, user_routes, pod_routes, profile_routes, ia_routes, video_routes
 
 # Configuration initiale
 limiter = Limiter(key_func=get_remote_address)
 
 # Initialisation de la base de données (ajout recommandé)
-from .database import Base, engine
+from ..database import Base, engine
 # Création des tables si elles n'existent pas
 Base.metadata.create_all(bind=engine)
 
@@ -46,8 +46,8 @@ class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://mentorat-intelligent-spotbulle-qzfh.onrender.com",
-        "https://spotbulle-frontend.onrender.com"
+        "https://spotbulle-front-end.onrender.com",
+        "https://spotbulle-backend-tydv.onrender.com"
     ],
     allow_credentials=True,
     allow_methods=["*"],
