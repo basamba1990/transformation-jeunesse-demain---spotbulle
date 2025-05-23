@@ -1,5 +1,4 @@
 # backend/app/routes/auth_routes.py
-
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -9,11 +8,11 @@ from slowapi.util import get_remote_address
 import logging
 from typing import Annotated
 
-from .schemas import token_schema, user_schema
-from .services import user_service
-from .utils import security
-from .database import get_db
-from .config import settings
+from ..schemas import token_schema, user_schema
+from ..services import user_service
+from ..utils import security
+from ..database import get_db
+from ..config import settings
 
 logger = logging.getLogger("auth_routes")
 logger.setLevel(logging.INFO)
