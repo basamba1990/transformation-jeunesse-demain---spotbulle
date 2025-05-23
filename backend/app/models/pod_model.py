@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, ARRA
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-from ..database import Base  # Base déclarée dans ton dossier database
+from .database import Base  # Base déclarée dans ton dossier database
 
 class Pod(Base):
     __tablename__ = "pods"
