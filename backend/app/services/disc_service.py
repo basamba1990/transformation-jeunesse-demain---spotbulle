@@ -3,8 +3,8 @@
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any, List, Tuple
 
-from .models import profile_model
-from .schemas import profile_schema # Assurez-vous que ce schéma peut gérer les résultats DISC structurés
+from ..models import profile_model
+from ..schemas import profile_schema # Assurez-vous que ce schéma peut gérer les résultats DISC structurés
 
 # --- Définition du Questionnaire DISC ---
 # Chaque question est un dictionnaire avec un ID et 4 affirmations.
