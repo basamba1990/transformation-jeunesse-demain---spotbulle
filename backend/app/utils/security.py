@@ -7,11 +7,11 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 # Import absolu du modèle User
-from ..models.user_model import User
-from ..config import settings
-from ..database import get_db
-from ..services import user_service
-from ..schemas import user_schema, token_schema
+from .models.user_model import User
+from .config import settings
+from .database import get_db
+from .services import user_service
+from .schemas import user_schema, token_schema
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
