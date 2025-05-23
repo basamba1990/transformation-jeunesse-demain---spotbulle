@@ -3,10 +3,10 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import logging
 
-from .schemas import pod_schema, user_schema
-from .services import pod_service, storage_service, transcription_service
-from .utils import security
-from .database import get_db
+from ..schemas import pod_schema, user_schema
+from ..services import pod_service, storage_service, transcription_service
+from ..utils import security
+from ..database import get_db
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
