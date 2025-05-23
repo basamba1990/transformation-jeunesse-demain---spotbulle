@@ -3,8 +3,8 @@
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
-from .models import profile_model, user_model
-from .schemas import profile_schema
+from ..models import profile_model, user_model
+from ..schemas import profile_schema
 
 def get_profile_by_user_id(db: Session, user_id: int) -> Optional[profile_model.Profile]:
     return db.query(profile_model.Profile).filter(profile_model.Profile.user_id == user_id).first()
