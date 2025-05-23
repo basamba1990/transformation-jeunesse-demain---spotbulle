@@ -3,8 +3,8 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-# Import de la Base centralisée au lieu de créer une nouvelle instance
-from .database import Base
+# Correction: Import de la Base centralisée avec le chemin relatif correct
+from ..database import Base
 
 # Import conditionnel pour éviter les dépendances circulaires
 if TYPE_CHECKING:
