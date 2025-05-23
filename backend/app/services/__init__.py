@@ -3,14 +3,14 @@ Fichier d'initialisation pour le module services.
 Importe tous les services pour les rendre disponibles lors de l'initialisation de l'application.
 """
 
-from ..disc_service import *
-from ..ia_service import *
-from ..pod_service import *
-from ..profile_service import *
-from ..storage_service import *
-from ..transcription_service import *
-from ..user_service import *
-from ..video_service import *
+from .disc_service import *
+from .ia_service import *
+from .pod_service import *
+from .profile_service import *
+from .storage_service import *
+from .transcription_service import *
+from .user_service import *
+from .video_service import *
 
 # Liste des services exportés
 __all__ = [
