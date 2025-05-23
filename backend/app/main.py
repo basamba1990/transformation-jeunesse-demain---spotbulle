@@ -8,16 +8,16 @@ import os
 
 # Importation explicite des modèles SQLAlchemy
 # Cette ligne est cruciale pour résoudre l'erreur "name 'Pod' is not defined"
-from ..models import User, Profile, Pod
+from app.models import User, Profile, Pod
 
 # Importation des routes
-from ..routes import auth_routes, user_routes, pod_routes, profile_routes, ia_routes, video_routes
+from app.routes import auth_routes, user_routes, pod_routes, profile_routes, ia_routes, video_routes
 
 # Configuration initiale
 limiter = Limiter(key_func=get_remote_address)
 
 # Initialisation de la base de données (ajout recommandé)
-from ..database import Base, engine
+from app.database import Base, engine
 # Création des tables si elles n'existent pas
 Base.metadata.create_all(bind=engine)
 
