@@ -2,9 +2,9 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 
 # Import absolu du modèle
-from .models.user_model import User
-from .schemas import user_schema
-from .utils import security
+from ..models.user_model import User
+from ..schemas import user_schema
+from ..utils import security
 
 def get_user(db: Session, user_id: int) -> Optional[User]:
     return db.query(User).filter(User.id == user_id).first()
