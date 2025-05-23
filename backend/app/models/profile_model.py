@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-from ..database import Base # Utiliser la Base centralisée de app.database
+from .database import Base # Utiliser la Base centralisée de app.database
 
 class Profile(Base):
     __tablename__ = "profiles"
