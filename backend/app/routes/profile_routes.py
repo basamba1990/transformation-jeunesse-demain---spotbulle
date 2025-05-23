@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any 
 
-from .schemas import profile_schema, user_schema, disc_schema 
-from .services import profile_service, user_service, disc_service 
-from .utils import security
-from .database import get_db
+from ..schemas import profile_schema, user_schema, disc_schema 
+from ..services import profile_service, user_service, disc_service 
+from ..utils import security
+from ..database import get_db
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
