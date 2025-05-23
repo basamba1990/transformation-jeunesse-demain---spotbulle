@@ -3,8 +3,8 @@
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
-from ..models import pod_model
-from ..schemas import pod_schema
+from .models import pod_model
+from .schemas import pod_schema
 
 def get_pod(db: Session, pod_id: int) -> Optional[pod_model.Pod]:
     return db.query(pod_model.Pod).filter(pod_model.Pod.id == pod_id).first()
