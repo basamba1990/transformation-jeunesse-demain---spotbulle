@@ -3,12 +3,12 @@ Fichier d'initialisation pour le module schemas.
 Importe tous les schémas pour les rendre disponibles lors de l'initialisation de l'application.
 """
 
-from .disc_schema import *
-from .ia_schema import *
-from .pod_schema import *
-from .profile_schema import *
-from .token_schema import *
-from .user_schema import *
+from ..disc_schema import *
+from ..ia_schema import *
+from ..pod_schema import *
+from ..profile_schema import *
+from ..token_schema import *
+from ..user_schema import *
 
 # Liste explicite des classes et fonctions exportées
 __all__ = [
