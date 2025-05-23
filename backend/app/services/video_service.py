@@ -5,8 +5,8 @@ from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from ..models.pod_model import Pod
-from ..config import settings
+from .models.pod_model import Pod
+from .config import settings
 from . import transcription_service
 
 async def transcribe_pod(db: Session, pod_id: int, audio_url: str) -> Pod:
