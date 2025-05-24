@@ -105,7 +105,7 @@ async def register_user(
 
         created_user = user_service.create_user(db, user_data)
         logger.info(f"Nouvel utilisateur créé avec succès: {created_user.email}")
-        return user_schema.User.from_orm(created_user)
+        return user_schema.User.model_validate(created_user)
 
     except ValueError as ve:
         # Capturer les erreurs de validation spécifiques levées par user_service
