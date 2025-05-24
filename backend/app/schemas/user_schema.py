@@ -43,9 +43,12 @@ class User(UserBase):
     is_superuser: bool
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        orm_mode = True
+    
+    # Utilisation de model_config au lieu de Config pour Pydantic v2
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={datetime: lambda v: v.isoformat()}
+    )
 
 # --------------------------------------------------
 # Schémas IA
