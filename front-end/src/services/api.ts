@@ -3,7 +3,7 @@ import type { DISCScores, DISCResults } from "../schemas/disc_schema";
 
 // Configuration de la base URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  "https://spotbulle-backend-sack.onrender.com/api/v1";
+  "https://spotbulle-backend-tydv.onrender.com/api/v1";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
