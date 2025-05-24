@@ -97,22 +97,31 @@ async def register_user(
     try:
         db_user = user_service.get_user_by_email(db, user_data.email)
         if db_user:
+            logger.warning(f"Tentative d'inscription avec un email déjà utilisé: {user_data.email}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email déjà enregistré"
             )
 
         created_user = user_service.create_user(db, user_data)
+        logger.info(f"Nouvel utilisateur créé avec succès: {created_user.email}")
         return user_schema.User.model_validate(created_user)
 
+    except ValueError as ve:
+        # Capturer les erreurs de validation spécifiques levées par user_service
+        logger.error(f"Erreur de validation lors de la création du compte: {str(ve)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(ve)
+        )
     except HTTPException as he:
         raise he
     except Exception as e:
         db.rollback()
-        logger.error(f"Erreur création compte: {str(e)}")
+        logger.error(f"Erreur création compte: {str(e)}", exc_info=True)  # Ajouter exc_info=True pour obtenir la stack trace
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erreur lors de la création du compte"
+            detail=f"Erreur lors de la création du compte: {str(e)}"
         )
     finally:
         db.close()
