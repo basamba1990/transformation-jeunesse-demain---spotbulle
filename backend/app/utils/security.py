@@ -14,7 +14,31 @@ from ..services import user_service
 from ..schemas import user_schema, token_schema
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
+
+# Fonctions de hachage et vérification de mot de passe
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Vérifie si le mot de passe en clair correspond au mot de passe haché."""
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password: str) -> str:
+    """Génère un hash sécurisé pour le mot de passe."""
+    return pwd_context.hash(password)
+
+# Création de tokens
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Crée un token JWT d'accès avec les données fournies."""
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
+    to_encode.update({"exp": expire, "type": "access"})
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Crée un token JWT de rafraîchissement avec les données fournies."""
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(days=7))
+    to_encode.update({"exp": expire, "type": "refresh"})
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 # Modification de la signature avec le modèle importé
 def create_tokens(user: User) -> token_schema.Token:
