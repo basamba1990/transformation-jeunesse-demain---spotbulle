@@ -23,9 +23,9 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relations avec importation différée pour éviter les dépendances circulaires
+    # Relations avec importation par chaîne de caractères pour éviter les dépendances circulaires
     profile = relationship(
-        lambda: Profile, 
+        "Profile", 
         back_populates="user", 
         uselist=False, 
         cascade="all, delete-orphan",
@@ -33,7 +33,7 @@ class User(Base):
     )
     
     pods = relationship(
-        lambda: Pod,
+        "Pod",
         back_populates="owner",
         cascade="all, delete-orphan",
         lazy="dynamic"
