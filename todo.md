@@ -1,0 +1,27 @@
+# Liste des tâches pour tester la connexion et la création du pod
+
+- [x] Extraire le code source du fichier zip
+- [x] Analyser la structure du projet
+- [x] Lire le README pour comprendre les instructions
+- [x] Configurer et lancer le backend
+  - [x] Vérifier les dépendances du backend
+  - [x] Créer et configurer le fichier .env
+  - [x] Installer les dépendances Python
+  - [x] Lancer le serveur FastAPI
+  - [x] Corriger l'erreur d'import relatif
+  - [x] Corriger l'erreur de connexion à la base de données PostgreSQL
+  - [x] Corriger l'incompatibilité du type ARRAY dans SQLite
+  - [x] Créer un script de lancement dédié pour éviter les conflits de port
+- [x] Tester la connexion et la création de pod
+  - [x] Créer un utilisateur via l'API
+  - [x] S'authentifier et obtenir un token d'accès
+  - [x] Créer un pod avec le token d'authentification
+  - [x] Vérifier la liste des pods créés
+- [x] Valider le bon fonctionnement global
+- [x] Documenter les résultats et les corrections apportées
+- [ ] Tester la connexion entre le frontend et le backend
+- [ ] Tester la création d'un pod
+- [ ] Identifier et corriger les erreurs éventuelles
+- [ ] Retester après corrections
+- [ ] Valider le bon fonctionnement
+- [ ] Documenter les résultats et les corrections apportées
