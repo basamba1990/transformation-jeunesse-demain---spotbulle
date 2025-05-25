@@ -58,6 +58,18 @@ def create_tokens(user: User) -> token_schema.Token:
         token_type="bearer"
     )
 
+# Fonction manquante qui était appelée dans auth_routes.py
+def create_tokens_response(user: User) -> token_schema.Token:
+    """
+    Crée une réponse contenant les tokens JWT pour l'utilisateur authentifié.
+    Cette fonction utilise create_tokens et ajoute les informations utilisateur nécessaires.
+    """
+    tokens = create_tokens(user)
+    # Ajouter les informations utilisateur supplémentaires au modèle Token
+    tokens.user_id = user.id
+    tokens.is_superuser = user.is_superuser
+    return tokens
+
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Session = Depends(get_db)
