@@ -1,6 +1,6 @@
 # Schémas Pydantic pour l'entité Pod - Version corrigée pour Pydantic v2
 
-from pydantic import BaseModel, Field, HttpUrl, validator, ConfigDict
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -10,11 +10,11 @@ class PodBase(BaseModel):
     description: Optional[str] = Field(None, max_length=5000, description="Description détaillée du pod.")
     tags: Optional[List[str]] = Field(None, max_items=20, description="Liste de tags, maximum 20 tags.")
     
-    model_config = ConfigDict(
-        from_attributes=True,
-        extra="forbid",
-        json_encoders={datetime: lambda v: v.isoformat()}
-    )
+    model_config = {
+        "from_attributes": True,
+        "extra": "forbid",
+        "json_encoders": {datetime: lambda v: v.isoformat()}
+    }
 
 # Schéma pour la création d'un pod
 class PodCreate(PodBase):
@@ -28,11 +28,11 @@ class PodUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=5000)
     tags: Optional[List[str]] = Field(None, max_items=20)
     
-    model_config = ConfigDict(
-        from_attributes=True,
-        extra="forbid",
-        json_encoders={datetime: lambda v: v.isoformat()}
-    )
+    model_config = {
+        "from_attributes": True,
+        "extra": "forbid",
+        "json_encoders": {datetime: lambda v: v.isoformat()}
+    }
 
 # Schéma pour lire un pod (ce qui est retourné par l'API)
 class Pod(PodBase):
@@ -44,7 +44,8 @@ class Pod(PodBase):
     updated_at: datetime
 
     # Pour s'assurer que les tags sont bien une liste de strings si fournis
-    @validator("tags", pre=True)
+    @field_validator("tags", mode="before")
+    @classmethod
     def ensure_tags_is_list(cls, v):
         if v is None:
             return []
