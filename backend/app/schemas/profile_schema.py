@@ -7,10 +7,6 @@ from datetime import datetime
 # Configuration globale pour interdire les champs supplémentaires non définis dans les modèles
 class StrictBaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid", from_attributes=True)
-    
-    # Ajout de la classe Config pour compatibilité Pydantic v1
-    class Config:
-        orm_mode = True
 
 # Types DISC possibles
 DISCType = Literal["Dominant", "Influent", "Stable", "Conforme", "Unknown"]
@@ -63,9 +59,7 @@ class Profile(ProfileBase):
     disc_assessment_results: Optional[Dict[str, Any]] = Field(None, description="Résultats détaillés de l'évaluation DISC.")
     updated_at: datetime
     
-    # Ajout explicite de la classe Config pour compatibilité Pydantic v1
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Schéma pour les réponses au questionnaire DISC
 class DiscAnswer(StrictBaseModel):
@@ -88,6 +82,4 @@ class DISCResults(StrictBaseModel):
     summary: Optional[str] = None
     detailed_report_url: Optional[HttpUrl] = None  # Si un rapport plus détaillé est généré
     
-    # Ajout explicite de la classe Config pour compatibilité Pydantic v1
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
