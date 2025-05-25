@@ -1,12 +1,12 @@
 # Schémas Pydantic pour l'entité Profil Utilisateur
 
-from pydantic import BaseModel, Field, HttpUrl, validator, ConfigDict
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 from typing import Optional, List, Dict, Any, Literal
 from datetime import datetime
 
 # Configuration globale pour interdire les champs supplémentaires non définis dans les modèles
 class StrictBaseModel(BaseModel):
-    model_config = ConfigDict(extra="forbid", from_attributes=True)
+    model_config = {"extra": "forbid", "from_attributes": True}
 
 # Types DISC possibles
 DISCType = Literal["Dominant", "Influent", "Stable", "Conforme", "Unknown"]
@@ -39,8 +39,9 @@ class ProfileUpdate(StrictBaseModel):
     objectives: Optional[str] = Field(None, max_length=1000)
 
     # Validateurs pour s'assurer que les listes sont bien des listes de strings
-    @validator("interests", "skills", pre=True, always=True)
-    def ensure_list_of_strings(cls, v, field):
+    @field_validator("interests", "skills", mode="before")
+    @classmethod
+    def ensure_list_of_strings(cls, v, info):
         if v is None:
             return []
         if isinstance(v, str):
@@ -49,7 +50,7 @@ class ProfileUpdate(StrictBaseModel):
         if isinstance(v, list):
             # S'assurer que tous les éléments sont des strings et non vides après strip
             return [str(item).strip() for item in v if str(item).strip()]
-        raise ValueError(f"{field.name} doit être une liste de chaînes de caractères ou une chaîne séparée par des virgules.")
+        raise ValueError(f"{info.field_name} doit être une liste de chaînes de caractères ou une chaîne séparée par des virgules.")
 
 # Schéma pour lire un profil (ce qui est retourné par l'API)
 class Profile(ProfileBase):
@@ -59,7 +60,7 @@ class Profile(ProfileBase):
     disc_assessment_results: Optional[Dict[str, Any]] = Field(None, description="Résultats détaillés de l'évaluation DISC.")
     updated_at: datetime
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = {"from_attributes": True}
 
 # Schéma pour les réponses au questionnaire DISC
 class DiscAnswer(StrictBaseModel):
@@ -82,4 +83,4 @@ class DISCResults(StrictBaseModel):
     summary: Optional[str] = None
     detailed_report_url: Optional[HttpUrl] = None  # Si un rapport plus détaillé est généré
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = {"from_attributes": True}
