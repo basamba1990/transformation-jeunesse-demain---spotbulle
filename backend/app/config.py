@@ -1,4 +1,5 @@
-from pydantic import BaseSettings, PostgresDsn, validator
+from pydantic_settings import BaseSettings
+from pydantic import PostgresDsn, validator
 from urllib.parse import urlparse
 
 class Settings(BaseSettings):
@@ -20,8 +21,9 @@ class Settings(BaseSettings):
             raise ValueError("URL Supabase invalide")
         return v
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": True
+    }
 
 settings = Settings()
