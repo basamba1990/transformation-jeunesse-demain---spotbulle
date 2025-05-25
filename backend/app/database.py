@@ -10,10 +10,10 @@ DATABASE_URL = settings.DATABASE_URL  # Accès à l'URL de la base de données
 
 # Crée un moteur SQLAlchemy
 # Pour SQLite, connect_args est nécessaire pour permettre le multithreading
-if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+if str(DATABASE_URL).startswith("sqlite"):
+    engine = create_engine(str(DATABASE_URL), connect_args={"check_same_thread": False})
 else:
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(str(DATABASE_URL))
 
 # Crée une SessionLocal class. Chaque instance de SessionLocal sera une session de base de données.
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
