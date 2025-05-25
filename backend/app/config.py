@@ -1,9 +1,10 @@
 from pydantic_settings import BaseSettings
-from pydantic import PostgresDsn, validator
+from pydantic import validator
+from typing import Union, Optional
 from urllib.parse import urlparse
 
 class Settings(BaseSettings):
-    DATABASE_URL: PostgresDsn
+    DATABASE_URL: str
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
