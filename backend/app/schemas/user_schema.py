@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from datetime import datetime
 
 # --------------------------------------------------
@@ -10,10 +10,11 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: str = Field(..., min_length=2, max_length=100)
     
-    class Config:
-        extra = "forbid"
-        orm_mode = True
-        json_encoders = {datetime: lambda v: v.isoformat()}
+    model_config = ConfigDict(
+        from_attributes=True,
+        extra="forbid",
+        json_encoders={datetime: lambda v: v.isoformat()}
+    )
 
 class UserCreate(UserBase):
     password: str = Field(..., 
@@ -29,10 +30,11 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(None, min_length=2, max_length=100)
     password: Optional[str] = Field(None, min_length=8, max_length=128)
     
-    class Config:
-        extra = "forbid"
-        orm_mode = True
-        json_encoders = {datetime: lambda v: v.isoformat()}
+    model_config = ConfigDict(
+        from_attributes=True,
+        extra="forbid",
+        json_encoders={datetime: lambda v: v.isoformat()}
+    )
 
 class UserUpdateByAdmin(UserUpdate):
     is_active: Optional[bool] = None
@@ -58,7 +60,8 @@ class UserPrompt(BaseModel):
         json_schema_extra={"example": {"prompt_text": "Comment développer mon projet professionnel ?"}}
     )
     
-    class Config:
-        extra = "forbid"
-        orm_mode = True
-        json_encoders = {datetime: lambda v: v.isoformat()}
+    model_config = ConfigDict(
+        from_attributes=True,
+        extra="forbid",
+        json_encoders={datetime: lambda v: v.isoformat()}
+    )
