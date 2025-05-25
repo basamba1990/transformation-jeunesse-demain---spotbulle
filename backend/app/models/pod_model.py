@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, ARRAY, JSON
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, JSON
+import json
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
@@ -12,7 +13,7 @@ class Pod(Base):
     description = Column(Text)
     audio_file_url = Column(String)  # URL vers le fichier audio (ex : Supabase Storage)
     transcription = Column(Text, nullable=True)  # Transcription de l'audio
-    tags = Column(ARRAY(String), nullable=True)  # Tags en tableau de chaînes
+    tags = Column(Text, nullable=True)  # Tags stockés en JSON sous forme de texte
     embedding = Column(JSON, nullable=True)  # Champ JSON pour stocker les embeddings
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
