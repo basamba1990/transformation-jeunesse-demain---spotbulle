@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request 
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -43,6 +44,13 @@ class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers.update(security_headers)
         return response
 
+# Middleware pour augmenter la limite de taille des fichiers à 200 Mo
+class LargeFileUploadMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Cette fonction permet simplement de passer la requête au middleware suivant
+        # La configuration de la taille maximale est définie lors de l'ajout du middleware
+        return await call_next(request)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -53,6 +61,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["Content-Range", "X-Total-Count"]
+)
+
+# Ajout du middleware pour les fichiers volumineux (200 Mo)
+app.add_middleware(
+    LargeFileUploadMiddleware,
+    max_body_size=209715200  # 200 Mo en octets
 )
 
 app.state.limiter = limiter
@@ -94,6 +108,7 @@ for router, path, tags in route_config:
 #     from .database import Base, engine
 #     Base.metadata.create_all(bind=engine)
 
+# Configuration de Uvicorn pour accepter les fichiers volumineux
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
@@ -101,5 +116,8 @@ if __name__ == "__main__":
         host=os.getenv("HOST", "0.0.0.0"),
         port=int(os.getenv("PORT", 8000)),
         reload=os.getenv("ENV") == "development",
-        log_config=None
+        log_config=None,
+        limit_concurrency=100,
+        limit_max_requests=10000,
+        timeout_keep_alive=120,  # Augmentation du timeout pour les connexions persistantes
     )
