@@ -1,10 +1,10 @@
-// frontend/src/pages/HomePage.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components/ui/Button'; // Importer le nouveau composant Button
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card'; // Importer les composants Card
-import { PlayCircle, User, Users, Mic2, LogIn, Heart, MessageCircle, Share } from 'lucide-react'; // Icônes
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
+import { PlayCircle, User, Users, Mic2, LogIn, Heart, MessageCircle, Share, ArrowRight } from 'lucide-react';
+import AudioResourceCard from '../components/AudioResourceCard';
 
 const HomePage: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
@@ -19,21 +19,34 @@ const HomePage: React.FC = () => {
         </div>
         
         <div className="container mx-auto px-6 relative z-10">
-          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold text-primary-600 dark:text-primary-300 mb-6 leading-tight">
-            Bienvenue sur <span className="text-accent-400">Spotbulle</span>
-          </h1>
-          <p className="font-sans text-lg sm:text-xl text-neutral-700 dark:text-neutral-300 max-w-2xl leading-relaxed">
-            Votre plateforme pour découvrir, partager et vous connecter autour de contenus audio enrichissants.
-          </p>
-          
-          {!isAuthenticated && (
-            <div className="mt-10 relative group inline-block">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 to-accent-400 rounded-lg blur-sm opacity-70 group-hover:opacity-100 transition duration-200"></div>
-              <Button asChild size="lg" variant="primary" className="relative bg-white dark:bg-dark-surface px-8 py-4 rounded-lg font-medium text-primary-600 dark:text-primary-300 shadow-md hover:shadow-xl transition-all duration-300">
-                <Link to="/register">Commencer l'aventure</Link>
-              </Button>
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-1">
+              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold text-primary-600 dark:text-primary-300 mb-6 leading-tight">
+                Bienvenue sur <span className="text-accent-400">Spotbulle</span>
+              </h1>
+              <p className="font-sans text-lg sm:text-xl text-neutral-700 dark:text-neutral-300 max-w-2xl leading-relaxed">
+                Votre plateforme pour découvrir, partager et vous connecter autour de contenus audio enrichissants.
+              </p>
+              
+              {!isAuthenticated && (
+                <div className="mt-10 relative group inline-block">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 to-accent-400 rounded-lg blur-sm opacity-70 group-hover:opacity-100 transition duration-200"></div>
+                  <Button asChild size="lg" variant="primary" className="relative bg-white dark:bg-dark-surface px-8 py-4 rounded-lg font-medium text-primary-600 dark:text-primary-300 shadow-md hover:shadow-xl transition-all duration-300">
+                    <Link to="/register">Commencer l'aventure</Link>
+                  </Button>
+                </div>
+              )}
             </div>
-          )}
+            
+            {/* Intégration du logo SpotBulle */}
+            <div className="w-full md:w-auto flex justify-center">
+              <img 
+                src="/assets/logo_spotbulle.png" 
+                alt="SpotBulle Logo" 
+                className="w-64 h-auto"
+              />
+            </div>
+          </div>
         </div>
       </header>
 
@@ -224,6 +237,127 @@ const HomePage: React.FC = () => {
               </Button>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Section Spotter sa voix - Intégration de l'image promotionnelle */}
+      <section className="my-12 container mx-auto px-4">
+        <div className="bg-purple-600 rounded-xl overflow-hidden shadow-xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-8 flex flex-col justify-center">
+              <h2 className="text-3xl font-bold text-white mb-4">
+                Spotter sa voix, c'est révéler sa beauté intérieure
+              </h2>
+              <p className="text-purple-100 mb-2">
+                Tu n'es pas là pour réciter, mais pour vibrer.
+              </p>
+              <p className="text-purple-100">
+                Chez SpotBulle, on t'aide à transformer ton énergie en message, ton vécu en impact.
+              </p>
+            </div>
+            <div className="relative h-full min-h-[300px] md:min-h-0">
+              <img 
+                src="/assets/spotter_sa_voix.jpg" 
+                alt="Jeune au microphone" 
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section IA - Intégration de l'image Huxe */}
+      <section className="my-12 bg-black text-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h2 className="text-3xl font-bold mb-6">Construisons votre intelligence personnelle</h2>
+              <p className="text-gray-300 mb-4">
+                L'avenir de l'IA n'est pas seulement intelligent : il est profondément personnalisé, 
+                s'adaptant à vous, à vos données et à vos besoins.
+              </p>
+              <p className="text-xl mt-8">À venir</p>
+            </div>
+            <div className="flex justify-center">
+              <div className="relative w-64 h-64 md:w-80 md:h-80">
+                <img 
+                  src="/assets/huxe_particles.jpg" 
+                  alt="Intelligence personnelle" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section Ressources - Intégration des liens externes */}
+      <section className="my-12 container mx-auto px-4">
+        <h2 className="text-2xl font-bold mb-6 text-center">Ressources pour la jeunesse</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <a 
+            href="https://www.1jeune1solution.gouv.fr/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="block p-6 bg-white dark:bg-dark-surface rounded-xl shadow-md hover:shadow-lg transition-shadow"
+          >
+            <h3 className="text-xl font-semibold mb-2">1 jeune, 1 solution</h3>
+            <p className="text-neutral-600 dark:text-neutral-300 mb-4">
+              Plateforme pour aider les jeunes à trouver un emploi, une formation ou un accompagnement.
+            </p>
+            <span className="text-primary-500 flex items-center">
+              Découvrir <ArrowRight size={16} className="ml-1" />
+            </span>
+          </a>
+          
+          <a 
+            href="https://www.onisep.fr/avenir-s" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="block p-6 bg-white dark:bg-dark-surface rounded-xl shadow-md hover:shadow-lg transition-shadow"
+          >
+            <h3 className="text-xl font-semibold mb-2">Onisep - Avenir(s)</h3>
+            <p className="text-neutral-600 dark:text-neutral-300 mb-4">
+              Informations et conseils sur les métiers, les formations et l'orientation.
+            </p>
+            <span className="text-primary-500 flex items-center">
+              Explorer <ArrowRight size={16} className="ml-1" />
+            </span>
+          </a>
+          
+          <div className="block p-6 bg-white dark:bg-dark-surface rounded-xl shadow-md">
+            <h3 className="text-xl font-semibold mb-2">Partenaire GenUP 2050</h3>
+            <div className="flex justify-center my-4">
+              <img 
+                src="/assets/logo_genup2050.png" 
+                alt="GenUP 2050" 
+                className="h-16 w-auto"
+              />
+            </div>
+            <p className="text-neutral-600 dark:text-neutral-300">
+              Notre partenaire pour la transformation et l'accompagnement de la jeunesse.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Section Ressources Audio */}
+      <section className="my-12 container mx-auto px-4">
+        <h2 className="text-2xl font-bold mb-6 text-center">Ressources audio</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <AudioResourceCard 
+            title="Modèle économique"
+            description="Présentation du modèle économique de SpotBulle et de son impact sur la jeunesse."
+            audioSrc="/assets/audio/EconomicModel.wav"
+          />
+          
+          <AudioResourceCard 
+            title="Transformation Jeunesse"
+            description="Comment SpotBulle accompagne la transformation de la jeunesse."
+            audioSrc="/assets/audio/sample.mp3"
+          />
         </div>
       </section>
 
