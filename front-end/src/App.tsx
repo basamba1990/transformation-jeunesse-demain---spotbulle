@@ -5,6 +5,7 @@ import MainLayout from "./layout/MainLayout";
 import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/ProfilePage"; // Sera /profile/me
 import PodsPage from "./pages/PodsPage";
+import PodsCreatePage from "./pages/PodsCreatePage"; // Import du composant de création de pods
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import { useAuth } from "./contexts/AuthContext";
@@ -51,12 +52,13 @@ const App: React.FC = () => {
                     {/* Mettre à jour le chemin pour le profil utilisateur */}
                     <Route path="profile/me" element={<ProfilePage />} /> 
                     <Route path="pods" element={<PodsPage />} />
+                    <Route path="pods/create" element={<PodsCreatePage />} /> {/* Ajout de la route pour la création de pods */}
                     {/* Ajoutez d'autres routes protégées ici si nécessaire */}
                 </Route>
             </Route>
 
-            {/* Redirection par défaut si aucune route ne correspond (optionnel) */}
-            {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
+            {/* Redirection par défaut si aucune route ne correspond */}
+            <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     );
 };
