@@ -1,4 +1,3 @@
-// frontend/src/services/api.ts
 import axios from "axios";
 import type { DISCScores, DISCResults } from "../schemas/disc_schema";
 
@@ -6,11 +5,16 @@ import type { DISCScores, DISCResults } from "../schemas/disc_schema";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
   "https://spotbulle-backend-tydv.onrender.com/api/v1";
 
+// Constante pour la taille maximale des fichiers (200 Mo)
+const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200 Mo en octets
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
-  timeout: 15000, // Augmentation du timeout pour les requêtes lentes
+  timeout: 120000, // 2 minutes pour les requêtes standard
+  maxContentLength: MAX_FILE_SIZE,
+  maxBodyLength: MAX_FILE_SIZE,
 });
 
 // Fonction pour stocker les tokens
@@ -240,6 +244,9 @@ export const podService = {
           // S'assurer que le token est bien envoyé
           "Authorization": `Bearer ${localStorage.getItem("spotbulle_token")}`
         },
+        timeout: 300000, // 5 minutes pour l'upload de très gros fichiers
+        maxContentLength: MAX_FILE_SIZE,
+        maxBodyLength: MAX_FILE_SIZE,
       });
       
       console.log("Pod créé avec succès:", response.data);
@@ -252,7 +259,7 @@ export const podService = {
           data: error.response.data
         });
       }
-      throw new Error("Échec de la création du pod");
+      throw error; // Remonter l'erreur complète pour un meilleur diagnostic
     }
   },
 
@@ -266,6 +273,9 @@ export const podService = {
           "Content-Type": "multipart/form-data",
           "Authorization": `Bearer ${localStorage.getItem("spotbulle_token")}`
         },
+        timeout: 300000, // 5 minutes pour l'upload de très gros fichiers
+        maxContentLength: MAX_FILE_SIZE,
+        maxBodyLength: MAX_FILE_SIZE,
       });
       
       console.log("Pod mis à jour avec succès:", response.data);
@@ -278,7 +288,7 @@ export const podService = {
           data: error.response.data
         });
       }
-      throw new Error("Échec de la mise à jour du pod");
+      throw error; // Remonter l'erreur complète pour un meilleur diagnostic
     }
   }
 };
