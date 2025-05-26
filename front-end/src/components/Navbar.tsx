@@ -1,237 +1,316 @@
-// frontend/src/components/Navbar.tsx
-import React, { useState, useEffect } from "react";
-import { NavLink, Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext"; // Assurez-vous que le chemin est correct
-import { LogOut, UserCircle, Home, Mic2, Users, Settings, Menu, X } from 'lucide-react'; // Icônes Lucide
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { Menu, X, Sun, Moon, User, LogOut, Settings, Bell } from 'lucide-react';
+import { Button } from './ui/Button';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Navbar: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [scrolled, setScrolled] = useState(false);
+  const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
 
-  // Effet pour détecter le scroll
+  // Fermer les menus lors du changement de route
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setUserMenuOpen(false);
+  }, [location]);
+
+  // Détecter le défilement pour ajouter un effet visuel à la navbar
   useEffect(() => {
     const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
+      setScrolled(window.scrollY > 10);
     };
-
+    
     window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [scrolled]);
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-
-  const navLinkClasses = (
-    { isActive }: { isActive: boolean })
-    : string => {
-    return `flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 ease-in-out 
-            ${isActive 
-                ? "bg-primary-500 text-white shadow-inner" 
-                : "text-neutral-lightest hover:bg-primary-400 hover:text-white"
-            }`;
-  };
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <nav className={`sticky top-0 z-50 transition-all duration-300 ${
-      scrolled 
-        ? "bg-primary-600/90 backdrop-blur-md shadow-lg py-2" 
-        : "bg-primary-600 py-4"
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      scrolled ? 'bg-white/90 dark:bg-dark-bg/90 backdrop-blur-md shadow-sm' : 'bg-transparent'
     }`}>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Link to="/" className="flex-shrink-0 group">
-              <h1 className="text-2xl font-display font-bold text-white group-hover:text-accent-300 transition-colors duration-300">
-                Spot<span className="text-accent-300 group-hover:text-white transition-colors duration-300">bulle</span>
-              </h1>
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="flex-shrink-0 group">
+            <div className="flex items-center">
+              <img 
+                src="/assets/logo_spotbulle.png" 
+                alt="SpotBulle" 
+                className="h-10 w-auto" 
+              />
+            </div>
+          </Link>
+
+          {/* Navigation - Desktop */}
+          <div className="hidden md:flex items-center space-x-4">
+            <Link 
+              to="/pods" 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                location.pathname.startsWith('/pods') 
+                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+              }`}
+            >
+              Pods
+            </Link>
+            
+            <Link 
+              to="/profiles" 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                location.pathname.startsWith('/profiles') 
+                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+              }`}
+            >
+              Profils
+            </Link>
+            
+            <Link 
+              to="/resources" 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                location.pathname.startsWith('/resources') 
+                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+              }`}
+            >
+              Ressources
+            </Link>
+          </div>
+
+          {/* Actions - Desktop */}
+          <div className="hidden md:flex items-center space-x-2">
+            {/* Bouton thème */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-border/50 transition-colors"
+              aria-label={theme === 'dark' ? 'Passer au mode clair' : 'Passer au mode sombre'}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            
+            {isAuthenticated ? (
+              <div className="relative">
+                {/* Avatar utilisateur */}
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center space-x-2 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-dark-border/50 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-600 dark:text-primary-300">
+                    {user?.full_name ? user.full_name.charAt(0).toUpperCase() : <User size={16} />}
+                  </div>
+                </button>
+                
+                {/* Menu utilisateur */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-surface rounded-md shadow-lg py-1 z-10 border border-neutral-200 dark:border-dark-border">
+                    <div className="px-4 py-2 border-b border-neutral-200 dark:border-dark-border">
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{user?.full_name || 'Utilisateur'}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{user?.email}</p>
+                    </div>
+                    
+                    <Link 
+                      to="/profile/me" 
+                      className="block px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-border/50 transition-colors"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      <div className="flex items-center">
+                        <User size={16} className="mr-2" />
+                        Mon profil
+                      </div>
+                    </Link>
+                    
+                    <Link 
+                      to="/settings" 
+                      className="block px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-border/50 transition-colors"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      <div className="flex items-center">
+                        <Settings size={16} className="mr-2" />
+                        Paramètres
+                      </div>
+                    </Link>
+                    
+                    <button 
+                      onClick={() => {
+                        logout();
+                        setUserMenuOpen(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-neutral-100 dark:hover:bg-dark-border/50 transition-colors"
+                    >
+                      <div className="flex items-center">
+                        <LogOut size={16} className="mr-2" />
+                        Déconnexion
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/login">Connexion</Link>
+                </Button>
+                <Button asChild variant="primary" size="sm">
+                  <Link to="/register">Inscription</Link>
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Menu mobile - Bouton */}
+          <div className="flex md:hidden items-center space-x-2">
+            {/* Bouton thème */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-border/50 transition-colors"
+              aria-label={theme === 'dark' ? 'Passer au mode clair' : 'Passer au mode sombre'}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            
+            {/* Bouton menu */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-md text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-border/50 transition-colors"
+              aria-label="Menu principal"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Menu mobile - Contenu */}
+      <div className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ${
+        mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`} onClick={() => setMobileMenuOpen(false)}>
+        <div 
+          className={`absolute right-0 top-0 h-full w-4/5 max-w-sm bg-white dark:bg-dark-surface shadow-xl transform transition-transform duration-300 ${
+            mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-4 border-b border-neutral-200 dark:border-dark-border flex items-center justify-between">
+            <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">Menu</h2>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-2 rounded-full text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-border/50 transition-colors"
+              aria-label="Fermer le menu"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          
+          {isAuthenticated && (
+            <div className="p-4 border-b border-neutral-200 dark:border-dark-border">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-600 dark:text-primary-300">
+                  {user?.full_name ? user.full_name.charAt(0).toUpperCase() : <User size={20} />}
+                </div>
+                <div>
+                  <p className="font-medium text-neutral-900 dark:text-neutral-100">{user?.full_name || 'Utilisateur'}</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">{user?.email}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="py-2">
+            <Link 
+              to="/pods" 
+              className={`block px-4 py-3 text-base font-medium transition-colors ${
+                location.pathname.startsWith('/pods') 
+                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Pods
+            </Link>
+            
+            <Link 
+              to="/profiles" 
+              className={`block px-4 py-3 text-base font-medium transition-colors ${
+                location.pathname.startsWith('/profiles') 
+                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Profils
+            </Link>
+            
+            <Link 
+              to="/resources" 
+              className={`block px-4 py-3 text-base font-medium transition-colors ${
+                location.pathname.startsWith('/resources') 
+                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Ressources
             </Link>
           </div>
           
-          {/* Navigation desktop */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4">
-              <NavLink to="/" className={navLinkClasses} end>
-                <Home size={18} className="mr-2" /> Accueil
-              </NavLink>
-              {isAuthenticated && (
-                <>
-                  <NavLink to="/pods" className={navLinkClasses}>
-                    <Mic2 size={18} className="mr-2" /> Pods
-                  </NavLink>
-                  <NavLink to="/matches" className={navLinkClasses}>
-                     <Users size={18} className="mr-2" /> Matches
-                  </NavLink>
-                </>
-              )}
-            </div>
-          </div>
-          
-          {/* Menu utilisateur desktop */}
-          <div className="hidden md:block">
-            {isAuthenticated && user ? (
-              <div className="ml-4 flex items-center md:ml-6">
-                <span className="text-neutral-lightest mr-3 text-sm font-handwritten text-lg">Bonjour, {user.full_name || user.email}!</span>
-                <div className="relative group">
-                  <button 
-                    type="button" 
-                    className="max-w-xs bg-primary-400 rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-500 focus:ring-white p-1 hover:bg-primary-300 transition-all duration-300"
-                    id="user-menu-button"
-                    aria-expanded="false"
-                    aria-haspopup="true"
-                  >
-                    <span className="sr-only">Ouvrir le menu utilisateur</span>
-                    <UserCircle size={28} className="text-white" />
-                  </button>
-                  <div 
-                    className="origin-top-right absolute right-0 mt-2 w-48 rounded-xl shadow-lg py-1 bg-white dark:bg-dark-surface ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-300 ease-in-out scale-95 group-hover:scale-100 group-focus-within:scale-100 transform" 
-                    role="menu" 
-                    aria-orientation="vertical" 
-                    aria-labelledby="user-menu-button"
-                  >
-                    <NavLink 
-                        to="/profile/me" 
-                        className={({ isActive }) => 
-                            `block px-4 py-2 text-sm ${isActive ? "bg-neutral-light dark:bg-dark-border text-primary-600 dark:text-primary-300" : "text-neutral-dark dark:text-dark-text hover:bg-neutral-light dark:hover:bg-dark-border hover:text-primary-500 dark:hover:text-primary-300"}`
-                        }
-                        role="menuitem"
-                    >
-                        <UserCircle size={16} className="inline mr-2" /> Mon Profil
-                    </NavLink>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left block px-4 py-2 text-sm text-neutral-dark dark:text-dark-text hover:bg-neutral-light dark:hover:bg-dark-border hover:text-danger"
-                      role="menuitem"
-                    >
-                      <LogOut size={16} className="inline mr-2 text-danger" /> Déconnexion
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-x-2">
-                <NavLink to="/login" className="btn-artisanal inline-flex items-center px-4 py-2 rounded-md text-sm font-medium bg-primary-400 text-white hover:bg-primary-300 transition-all duration-300">
-                  Connexion
-                </NavLink>
-                <NavLink to="/register" 
-                  className="btn-artisanal inline-flex items-center px-4 py-2 rounded-md text-sm font-medium bg-accent-400 hover:bg-accent-500 text-white transition-all duration-300">
-                  Inscription
-                </NavLink>
-              </div>
-            )}
-          </div>
-          
-          {/* Menu burger pour mobile */}
-          <div className="flex md:hidden">
-            {isAuthenticated ? (
-              <button
-                onClick={toggleMobileMenu}
-                className="bg-primary-500 p-2 rounded-md inline-flex items-center justify-center text-white hover:bg-primary-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white transition-colors duration-300"
+          {isAuthenticated ? (
+            <div className="border-t border-neutral-200 dark:border-dark-border py-2">
+              <Link 
+                to="/profile/me" 
+                className="block px-4 py-3 text-base font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
               >
-                <span className="sr-only">Ouvrir le menu</span>
-                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                <div className="flex items-center">
+                  <User size={18} className="mr-3" />
+                  Mon profil
+                </div>
+              </Link>
+              
+              <Link 
+                to="/settings" 
+                className="block px-4 py-3 text-base font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <div className="flex items-center">
+                  <Settings size={18} className="mr-3" />
+                  Paramètres
+                </div>
+              </Link>
+              
+              <button 
+                onClick={() => {
+                  logout();
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left px-4 py-3 text-base font-medium text-red-600 dark:text-red-400 hover:bg-neutral-50 dark:hover:bg-dark-border/30 transition-colors"
+              >
+                <div className="flex items-center">
+                  <LogOut size={18} className="mr-3" />
+                  Déconnexion
+                </div>
               </button>
-            ) : (
-              <div className="flex space-x-2">
-                <NavLink to="/login" className="btn-artisanal inline-flex items-center px-3 py-1.5 rounded-md text-xs font-medium bg-primary-400 text-white hover:bg-primary-300 transition-all duration-300">
-                  Connexion
-                </NavLink>
-                <button
-                  onClick={toggleMobileMenu}
-                  className="bg-primary-500 p-2 rounded-md inline-flex items-center justify-center text-white hover:bg-primary-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white transition-colors duration-300"
-                >
-                  <span className="sr-only">Ouvrir le menu</span>
-                  {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                </button>
+            </div>
+          ) : (
+            <div className="border-t border-neutral-200 dark:border-dark-border p-4">
+              <div className="grid grid-cols-2 gap-2">
+                <Button asChild variant="outline" size="lg" className="w-full">
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                    Connexion
+                  </Link>
+                </Button>
+                <Button asChild variant="primary" size="lg" className="w-full">
+                  <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                    Inscription
+                  </Link>
+                </Button>
               </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Menu mobile */}
-        <div className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${
-          mobileMenuOpen ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'
-        }`}>
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-primary-700 rounded-lg shadow-inner">
-            <NavLink to="/" 
-              className={({ isActive }) => 
-                `block px-3 py-2 rounded-md text-base font-medium ${
-                  isActive 
-                    ? 'bg-primary-500 text-white' 
-                    : 'text-neutral-lightest hover:bg-primary-400 hover:text-white'
-                } transition-colors duration-300`
-              }
-              onClick={() => setMobileMenuOpen(false)}
-              end
-            >
-              <Home size={18} className="inline-block mr-2" /> Accueil
-            </NavLink>
-            
-            {isAuthenticated && (
-              <>
-                <NavLink to="/pods"
-                  className={({ isActive }) => 
-                    `block px-3 py-2 rounded-md text-base font-medium ${
-                      isActive 
-                        ? 'bg-primary-500 text-white' 
-                        : 'text-neutral-lightest hover:bg-primary-400 hover:text-white'
-                    } transition-colors duration-300`
-                  }
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Mic2 size={18} className="inline-block mr-2" /> Pods
-                </NavLink>
-                
-                <NavLink to="/matches"
-                  className={({ isActive }) => 
-                    `block px-3 py-2 rounded-md text-base font-medium ${
-                      isActive 
-                        ? 'bg-primary-500 text-white' 
-                        : 'text-neutral-lightest hover:bg-primary-400 hover:text-white'
-                    } transition-colors duration-300`
-                  }
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Users size={18} className="inline-block mr-2" /> Matches
-                </NavLink>
-                
-                <NavLink to="/profile/me"
-                  className={({ isActive }) => 
-                    `block px-3 py-2 rounded-md text-base font-medium ${
-                      isActive 
-                        ? 'bg-primary-500 text-white' 
-                        : 'text-neutral-lightest hover:bg-primary-400 hover:text-white'
-                    } transition-colors duration-300`
-                  }
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <UserCircle size={18} className="inline-block mr-2" /> Mon Profil
-                </NavLink>
-                
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-neutral-lightest hover:bg-danger hover:text-white transition-colors duration-300"
-                >
-                  <LogOut size={18} className="inline-block mr-2" /> Déconnexion
-                </button>
-              </>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </nav>
