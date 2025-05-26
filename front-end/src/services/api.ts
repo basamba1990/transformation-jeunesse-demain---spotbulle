@@ -1,3 +1,4 @@
+// frontend/src/services/api.ts
 import axios from "axios";
 import type { DISCScores, DISCResults } from "../schemas/disc_schema";
 
@@ -9,7 +10,7 @@ const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
-  timeout: 10000,
+  timeout: 15000, // Augmentation du timeout pour les requêtes lentes
 });
 
 // Fonction pour stocker les tokens
@@ -69,6 +70,21 @@ export interface IPod {
   owner_id: number;
   created_at: string;
   updated_at: string;
+  tags?: string[];
+}
+
+export interface IPodCreateData {
+  title: string;
+  description?: string;
+  tags?: string;
+  audio_file: File;
+}
+
+export interface IPodUpdateData {
+  title?: string;
+  description?: string;
+  tags?: string;
+  audio_file?: File;
 }
 
 export interface IProfile {
@@ -123,38 +139,92 @@ export const discService = {
 export const podService = {
   fetchAll: async (): Promise<IPod[]> => {
     try {
+      console.log("Début de la récupération de tous les pods...");
       const response = await apiClient.get("/pods");
+      console.log("Pods récupérés avec succès:", response.data);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur récupération des pods:", error);
+      // Afficher plus de détails sur l'erreur pour le débogage
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      }
       throw new Error("Impossible de charger les pods");
     }
   },
 
   fetchMyPods: async (): Promise<IPod[]> => {
     try {
+      console.log("Début de la récupération de mes pods...");
       const response = await apiClient.get("/pods/me");
+      console.log("Mes pods récupérés avec succès:", response.data);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur récupération des pods utilisateur:", error);
+      // Afficher plus de détails sur l'erreur pour le débogage
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      }
       throw new Error("Impossible de charger vos pods");
+    }
+  },
+
+  getPod: async (id: number): Promise<IPod> => {
+    try {
+      console.log(`Début de la récupération du pod ${id}...`);
+      const response = await apiClient.get(`/pods/${id}`);
+      console.log("Pod récupéré avec succès:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error(`Erreur récupération du pod ${id}:`, error);
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
+      throw new Error("Impossible de charger le pod");
     }
   },
 
   deletePod: async (id: number): Promise<void> => {
     try {
+      console.log(`Début de la suppression du pod ${id}...`);
       await apiClient.delete(`/pods/${id}`);
-    } catch (error) {
+      console.log(`Pod ${id} supprimé avec succès`);
+    } catch (error: any) {
       console.error("Erreur suppression pod:", error);
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       throw new Error("Échec de la suppression du pod");
     }
   },
 
   transcribePod: async (id: number): Promise<void> => {
     try {
+      console.log(`Début de la transcription du pod ${id}...`);
       await apiClient.post(`/pods/${id}/transcribe`);
-    } catch (error) {
+      console.log(`Pod ${id} transcrit avec succès`);
+    } catch (error: any) {
       console.error("Erreur transcription pod:", error);
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       throw new Error("Échec de la transcription audio");
     }
   },
@@ -162,14 +232,53 @@ export const podService = {
   createPod: async (data: FormData): Promise<IPod> => {
     try {
       console.log("Début de la création du pod...");
+      console.log("Données envoyées:", Array.from(data.entries()));
+      
       const response = await apiClient.post("/pods", data, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { 
+          "Content-Type": "multipart/form-data",
+          // S'assurer que le token est bien envoyé
+          "Authorization": `Bearer ${localStorage.getItem("spotbulle_token")}`
+        },
       });
+      
       console.log("Pod créé avec succès:", response.data);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur création pod:", error);
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       throw new Error("Échec de la création du pod");
+    }
+  },
+
+  updatePod: async (id: number, data: FormData): Promise<IPod> => {
+    try {
+      console.log(`Début de la mise à jour du pod ${id}...`);
+      console.log("Données envoyées:", Array.from(data.entries()));
+      
+      const response = await apiClient.put(`/pods/${id}`, data, {
+        headers: { 
+          "Content-Type": "multipart/form-data",
+          "Authorization": `Bearer ${localStorage.getItem("spotbulle_token")}`
+        },
+      });
+      
+      console.log("Pod mis à jour avec succès:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error(`Erreur mise à jour pod ${id}:`, error);
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
+      throw new Error("Échec de la mise à jour du pod");
     }
   }
 };
@@ -178,6 +287,7 @@ export const podService = {
 export const authService = {
   loginUser: async (userData: { email: string; password: string }): Promise<string> => {
     try {
+      console.log("Tentative de connexion...");
       const params = new URLSearchParams();
       params.append("username", userData.email);
       params.append("password", userData.password);
@@ -186,34 +296,57 @@ export const authService = {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
       
+      console.log("Connexion réussie, tokens reçus");
       storeTokens(response.data.access_token, response.data.refresh_token);
       return response.data.access_token;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur connexion:", error);
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       throw new Error("Identifiants incorrects ou problème de connexion");
     }
   },
 
   refreshToken: async (): Promise<string> => {
     try {
+      console.log("Tentative de rafraîchissement du token...");
       const refreshToken = localStorage.getItem("spotbulle_refresh_token");
       if (!refreshToken) throw new Error("Aucun token de rafraîchissement");
       
       const response = await apiClient.post("/auth/refresh", { refresh_token: refreshToken });
+      console.log("Token rafraîchi avec succès");
       storeTokens(response.data.access_token, response.data.refresh_token);
       return response.data.access_token;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur rafraîchissement token:", error);
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       throw new Error("Session expirée, veuillez vous reconnecter");
     }
   },
 
   getCurrentUser: async (): Promise<IUser> => {
     try {
+      console.log("Récupération des informations utilisateur...");
       const response = await apiClient.get("/auth/me");
+      console.log("Informations utilisateur récupérées:", response.data);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur récupération utilisateur:", error);
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       throw new Error("Impossible de charger le profil utilisateur");
     }
   },
@@ -224,10 +357,18 @@ export const authService = {
     full_name: string 
   }): Promise<IUser> => {
     try {
+      console.log("Tentative d'inscription...");
       const response = await apiClient.post("/auth/register", userData);
+      console.log("Inscription réussie:", response.data);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur inscription:", error);
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       throw new Error("Échec de l'inscription - vérifiez les données saisies");
     }
   },
@@ -243,35 +384,60 @@ export const authService = {
 export const profileService = {
   getMyProfile: async (): Promise<IProfile> => {
     try {
-      const response = await apiClient.get("/profiles/profiles/me");
+      console.log("Récupération du profil utilisateur...");
+      const response = await apiClient.get("/profiles/me");
+      console.log("Profil récupéré avec succès:", response.data);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur récupération profil:", error);
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       throw new Error("Impossible de charger votre profil");
     }
   },
 
   updateProfile: async (data: Partial<ProfileData>): Promise<IProfile> => {
     try {
-      const response = await apiClient.put("/profiles/profiles/me", data);
+      console.log("Mise à jour du profil...");
+      console.log("Données envoyées:", data);
+      const response = await apiClient.put("/profiles/me", data);
+      console.log("Profil mis à jour avec succès:", response.data);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur mise à jour profil:", error);
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       throw new Error("Échec de la mise à jour du profil");
     }
   },
 
   uploadProfilePicture: async (file: File): Promise<string> => {
     try {
+      console.log("Envoi de la photo de profil...");
       const formData = new FormData();
       formData.append("file", file);
       
-      const response = await apiClient.post("/profiles/profiles/me/picture", formData, {
+      const response = await apiClient.post("/profiles/me/picture", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      console.log("Photo de profil envoyée avec succès:", response.data);
       return response.data.profile_picture_url;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur upload photo:", error);
+      if (error.response) {
+        console.error("Détails de l'erreur:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       throw new Error("Échec de l'envoi de la photo de profil");
     }
   }
@@ -285,7 +451,9 @@ export type {
   IPod, 
   IProfile, 
   DISCQuestion, 
-  DISCAssessmentRequest 
+  DISCAssessmentRequest,
+  IPodCreateData,
+  IPodUpdateData
 };
 
 export default apiClient;
