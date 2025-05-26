@@ -446,6 +446,9 @@ export const profileService = {
 // Types exports
 export type ProfileData = Omit<IProfile, "user_id" | "created_at" | "updated_at">;
 
+// Export direct des fonctions utilisées dans PodForm.tsx
+export const { getPod, createPod, updatePod } = podService;
+
 export type { 
   IUser, 
   IPod, 
