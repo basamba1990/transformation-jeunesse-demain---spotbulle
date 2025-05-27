@@ -1,7 +1,8 @@
-services:
-  # Frontend (React + Vite)
+service:
+  # Service Frontend (React)
   - type: staticSite
-    name: mentorat-intelligent-spotbulle
+    name: spotbulle-front-end
+    env: node
     region: frankfurt
     plan: free
     rootDir: front-end
@@ -11,14 +12,12 @@ services:
     buildCommand: |
       npm install
       npm run build
-    staticPublishPath: ./dist
-    routes:
-      - type: rewrite
-        source: "/*"
-        destination: "/index.html"
+      # Créer un fichier _redirects pour gérer le routage SPA
+      echo "/* /index.html 200" > dist/_redirects
+    startCommand: npx serve -s dist
+    healthCheckPath: /
     envVars:
-      - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: spotbulle-backend
-          property: url
+      - key: NODE_VERSION
+        value: 20.19.1
+      - key: VITE_API_URL
+        value: https://spotbulle-backend.tydv.onrender.com
