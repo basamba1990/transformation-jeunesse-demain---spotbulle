@@ -5,7 +5,7 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: './', // Utiliser des chemins relatifs pour éviter les problèmes de déploiement
+  base: '/', // Modifier cette ligne pour utiliser des chemins absolus
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -26,16 +26,18 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    // Désactiver la minification pour le débogage
-    minify: process.env.NODE_ENV === 'production' ? 'esbuild' : false,
-    sourcemap: true,
+    minify: true, // Toujours activer la minification en production
+    sourcemap: process.env.NODE_ENV !== 'production', // Désactiver les sourcemaps en production
     rollupOptions: {
-      external: [],
       output: {
-        // Éviter les problèmes de noms de fichiers avec hachage
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name].[ext]'
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['lucide-react'],
+        },
+        // Utiliser des noms de fichiers avec hachage pour éviter les problèmes de cache
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     }
   },
