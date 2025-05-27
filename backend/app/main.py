@@ -1,5 +1,4 @@
-from fastapi import FastAPI, Request 
-
+from fastapi import FastAPI, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -44,11 +43,22 @@ class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers.update(security_headers)
         return response
 
-# Middleware pour augmenter la limite de taille des fichiers à 200 Mo
+# Middleware modifié pour gérer la taille des fichiers volumineux
 class LargeFileUploadMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, max_body_size=None):
+        super().__init__(app)
+        self.max_body_size = max_body_size
+        
     async def dispatch(self, request: Request, call_next):
-        # Cette fonction permet simplement de passer la requête au middleware suivant
-        # La configuration de la taille maximale est définie lors de l'ajout du middleware
+        # Vérification optionnelle de la taille du corps de la requête
+        content_length = request.headers.get("content-length")
+        if content_length and self.max_body_size:
+            if int(content_length) > self.max_body_size:
+                from fastapi.responses import JSONResponse
+                return JSONResponse(
+                    status_code=413,
+                    content={"detail": "Taille du fichier trop importante"}
+                )
         return await call_next(request)
 
 app.add_middleware(
@@ -63,7 +73,7 @@ app.add_middleware(
     expose_headers=["Content-Range", "X-Total-Count"]
 )
 
-# Ajout du middleware pour les fichiers volumineux (200 Mo)
+# Ajout du middleware pour les fichiers volumineux avec la syntaxe corrigée
 app.add_middleware(
     LargeFileUploadMiddleware,
     max_body_size=209715200  # 200 Mo en octets
@@ -99,15 +109,6 @@ for router, path, tags in route_config:
         tags=tags
     )
 
-# Alternative: utiliser un événement de démarrage FastAPI
-# @app.on_event("startup")
-# async def startup_db_client():
-#     # Cette fonction s'exécute au démarrage de l'application
-#     # Assurez-vous que les modèles sont importés et que la base de données est initialisée
-#     from .models import User, Profile, Pod
-#     from .database import Base, engine
-#     Base.metadata.create_all(bind=engine)
-
 # Configuration de Uvicorn pour accepter les fichiers volumineux
 if __name__ == "__main__":
     import uvicorn
@@ -120,4 +121,6 @@ if __name__ == "__main__":
         limit_concurrency=100,
         limit_max_requests=10000,
         timeout_keep_alive=120,  # Augmentation du timeout pour les connexions persistantes
+        # Configuration alternative pour les fichiers volumineux via Uvicorn
+        # http={'max_request_size': 209715200}  # 200 Mo en octets
     )
