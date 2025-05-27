@@ -42,6 +42,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   useEffect(() => {
+    // Définir un timeout pour éviter un blocage infini
+    const timeoutId = setTimeout(() => {
+      if (state.isLoading) {
+        console.warn("Timeout de vérification d'authentification atteint, passage en mode non authentifié");
+        setState(prev => ({ ...prev, isLoading: false }));
+      }
+    }, 10000); // 10 secondes maximum pour la vérification
+
     const verifyAuth = async () => {
       const token = localStorage.getItem("spotbulle_token");
       if (token) {
@@ -88,7 +96,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setState(prev => ({ ...prev, isLoading: false }));
       }
     };
-    verifyAuth();
+
+    // Exécuter la vérification d'authentification
+    verifyAuth().catch(error => {
+      console.error("Erreur non gérée lors de la vérification d'authentification:", error);
+      // S'assurer que l'application ne reste pas bloquée en cas d'erreur
+      setState(prev => ({ 
+        ...prev, 
+        isAuthenticated: false, 
+        user: null, 
+        token: null,
+        isLoading: false 
+      }));
+    });
+
+    // Nettoyer le timeout si le composant est démonté ou si la vérification est terminée
+    return () => clearTimeout(timeoutId);
   }, []);
 
   return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
