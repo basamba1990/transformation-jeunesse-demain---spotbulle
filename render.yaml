@@ -14,7 +14,7 @@ services:
       pip install --upgrade pip
       python fix_dependencies.py
       pip install -r requirements.txt
-      python create_tables.py  # Ajoutez cette ligne
+      python create_tables.py
       alembic upgrade head 
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --forwarded-allow-ips="*"
     healthCheckPath: /
@@ -35,6 +35,29 @@ services:
         sync: false
       - key: BUCKET_NAME
         sync: false
+
+  # Service Frontend (React)
+  - type: web
+    name: spotbulle-front-end
+    env: node
+    region: frankfurt
+    plan: free
+    rootDir: front-end
+    buildFilter:
+      paths:
+        - "front-end/**"
+    buildCommand: |
+      npm install
+      npm run build
+      # Créer un fichier _redirects pour gérer le routage SPA
+      echo "/* /index.html 200" > dist/_redirects
+    startCommand: npx serve -s dist
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 20.19.1
+      - key: VITE_API_URL
+        value: https://spotbulle-backend.onrender.com
 
 databases:
   - name: spotbulle-db
