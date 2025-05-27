@@ -12,7 +12,7 @@ const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
-  timeout: 120000, // 2 minutes pour les requêtes standard
+  timeout: 30000, // Réduire à 30 secondes pour éviter les blocages trop longs
   maxContentLength: MAX_FILE_SIZE,
   maxBodyLength: MAX_FILE_SIZE,
 });
@@ -38,6 +38,12 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
+    // Si pas de réponse du serveur, retourner immédiatement l'erreur
+    if (!error.response) {
+      console.error("Erreur réseau - Serveur inaccessible:", error.message);
+      return Promise.reject(new Error("Serveur inaccessible. Veuillez réessayer plus tard."));
+    }
+    
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
@@ -47,7 +53,8 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         authService.logout();
-        window.location.href = '/login';
+        // Ne pas rediriger automatiquement pour éviter les boucles infinies
+        console.error("Session expirée:", refreshError);
         return Promise.reject(refreshError);
       }
     }
@@ -124,18 +131,33 @@ export interface DISCResultsResponse {
 // Services DISC
 export const discService = {
   getQuestionnaire: async (): Promise<DISCQuestion[]> => {
-    const response = await apiClient.get("/profiles/disc/questionnaire");
-    return response.data;
+    try {
+      const response = await apiClient.get("/profiles/disc/questionnaire");
+      return response.data;
+    } catch (error: any) {
+      console.error("Erreur récupération questionnaire DISC:", error);
+      throw new Error("Impossible de charger le questionnaire DISC");
+    }
   },
   
   submitAssessment: async (data: DISCAssessmentRequest): Promise<DISCResultsResponse> => {
-    const response = await apiClient.post("/profiles/disc/assess", data);
-    return response.data;
+    try {
+      const response = await apiClient.post("/profiles/disc/assess", data);
+      return response.data;
+    } catch (error: any) {
+      console.error("Erreur soumission évaluation DISC:", error);
+      throw new Error("Échec de l'évaluation DISC");
+    }
   },
   
   getResults: async (): Promise<DISCResultsResponse> => {
-    const response = await apiClient.get("/profiles/disc/results");
-    return response.data;
+    try {
+      const response = await apiClient.get("/profiles/disc/results");
+      return response.data;
+    } catch (error: any) {
+      console.error("Erreur récupération résultats DISC:", error);
+      throw new Error("Impossible de charger vos résultats DISC");
+    }
   }
 };
 
@@ -149,15 +171,8 @@ export const podService = {
       return response.data;
     } catch (error: any) {
       console.error("Erreur récupération des pods:", error);
-      // Afficher plus de détails sur l'erreur pour le débogage
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data,
-          headers: error.response.headers
-        });
-      }
-      throw new Error("Impossible de charger les pods");
+      // Retourner un tableau vide au lieu de lancer une exception
+      return [];
     }
   },
 
@@ -169,19 +184,12 @@ export const podService = {
       return response.data;
     } catch (error: any) {
       console.error("Erreur récupération des pods utilisateur:", error);
-      // Afficher plus de détails sur l'erreur pour le débogage
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data,
-          headers: error.response.headers
-        });
-      }
-      throw new Error("Impossible de charger vos pods");
+      // Retourner un tableau vide au lieu de lancer une exception
+      return [];
     }
   },
 
-  getPod: async (id: number): Promise<IPod> => {
+  getPod: async (id: number): Promise<IPod | null> => {
     try {
       console.log(`Début de la récupération du pod ${id}...`);
       const response = await apiClient.get(`/pods/${id}`);
@@ -189,51 +197,35 @@ export const podService = {
       return response.data;
     } catch (error: any) {
       console.error(`Erreur récupération du pod ${id}:`, error);
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data
-        });
-      }
-      throw new Error("Impossible de charger le pod");
+      return null;
     }
   },
 
-  deletePod: async (id: number): Promise<void> => {
+  deletePod: async (id: number): Promise<boolean> => {
     try {
       console.log(`Début de la suppression du pod ${id}...`);
       await apiClient.delete(`/pods/${id}`);
       console.log(`Pod ${id} supprimé avec succès`);
+      return true;
     } catch (error: any) {
       console.error("Erreur suppression pod:", error);
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data
-        });
-      }
-      throw new Error("Échec de la suppression du pod");
+      return false;
     }
   },
 
-  transcribePod: async (id: number): Promise<void> => {
+  transcribePod: async (id: number): Promise<boolean> => {
     try {
       console.log(`Début de la transcription du pod ${id}...`);
       await apiClient.post(`/pods/${id}/transcribe`);
       console.log(`Pod ${id} transcrit avec succès`);
+      return true;
     } catch (error: any) {
       console.error("Erreur transcription pod:", error);
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data
-        });
-      }
-      throw new Error("Échec de la transcription audio");
+      return false;
     }
   },
 
-  createPod: async (data: FormData): Promise<IPod> => {
+  createPod: async (data: FormData): Promise<IPod | null> => {
     try {
       console.log("Début de la création du pod...");
       console.log("Données envoyées:", Array.from(data.entries()));
@@ -244,7 +236,7 @@ export const podService = {
           // S'assurer que le token est bien envoyé
           "Authorization": `Bearer ${localStorage.getItem("spotbulle_token")}`
         },
-        timeout: 300000, // 5 minutes pour l'upload de très gros fichiers
+        timeout: 60000, // Réduire à 1 minute pour éviter les blocages trop longs
         maxContentLength: MAX_FILE_SIZE,
         maxBodyLength: MAX_FILE_SIZE,
       });
@@ -253,17 +245,11 @@ export const podService = {
       return response.data;
     } catch (error: any) {
       console.error("Erreur création pod:", error);
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data
-        });
-      }
-      throw error; // Remonter l'erreur complète pour un meilleur diagnostic
+      return null;
     }
   },
 
-  updatePod: async (id: number, data: FormData): Promise<IPod> => {
+  updatePod: async (id: number, data: FormData): Promise<IPod | null> => {
     try {
       console.log(`Début de la mise à jour du pod ${id}...`);
       console.log("Données envoyées:", Array.from(data.entries()));
@@ -273,7 +259,7 @@ export const podService = {
           "Content-Type": "multipart/form-data",
           "Authorization": `Bearer ${localStorage.getItem("spotbulle_token")}`
         },
-        timeout: 300000, // 5 minutes pour l'upload de très gros fichiers
+        timeout: 60000, // Réduire à 1 minute pour éviter les blocages trop longs
         maxContentLength: MAX_FILE_SIZE,
         maxBodyLength: MAX_FILE_SIZE,
       });
@@ -282,13 +268,7 @@ export const podService = {
       return response.data;
     } catch (error: any) {
       console.error(`Erreur mise à jour pod ${id}:`, error);
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data
-        });
-      }
-      throw error; // Remonter l'erreur complète pour un meilleur diagnostic
+      return null;
     }
   }
 };
@@ -311,12 +291,6 @@ export const authService = {
       return response.data.access_token;
     } catch (error: any) {
       console.error("Erreur connexion:", error);
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data
-        });
-      }
       throw new Error("Identifiants incorrects ou problème de connexion");
     }
   },
@@ -333,12 +307,6 @@ export const authService = {
       return response.data.access_token;
     } catch (error: any) {
       console.error("Erreur rafraîchissement token:", error);
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data
-        });
-      }
       throw new Error("Session expirée, veuillez vous reconnecter");
     }
   },
@@ -351,12 +319,6 @@ export const authService = {
       return response.data;
     } catch (error: any) {
       console.error("Erreur récupération utilisateur:", error);
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data
-        });
-      }
       throw new Error("Impossible de charger le profil utilisateur");
     }
   },
@@ -373,12 +335,6 @@ export const authService = {
       return response.data;
     } catch (error: any) {
       console.error("Erreur inscription:", error);
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data
-        });
-      }
       throw new Error("Échec de l'inscription - vérifiez les données saisies");
     }
   },
@@ -392,7 +348,7 @@ export const authService = {
 
 // Service de profil avec gestion améliorée
 export const profileService = {
-  getMyProfile: async (): Promise<IProfile> => {
+  getMyProfile: async (): Promise<IProfile | null> => {
     try {
       console.log("Récupération du profil utilisateur...");
       const response = await apiClient.get("/profiles/me");
@@ -400,17 +356,11 @@ export const profileService = {
       return response.data;
     } catch (error: any) {
       console.error("Erreur récupération profil:", error);
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data
-        });
-      }
-      throw new Error("Impossible de charger votre profil");
+      return null;
     }
   },
 
-  updateProfile: async (data: Partial<ProfileData>): Promise<IProfile> => {
+  updateProfile: async (data: Partial<ProfileData>): Promise<IProfile | null> => {
     try {
       console.log("Mise à jour du profil...");
       console.log("Données envoyées:", data);
@@ -419,17 +369,11 @@ export const profileService = {
       return response.data;
     } catch (error: any) {
       console.error("Erreur mise à jour profil:", error);
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data
-        });
-      }
-      throw new Error("Échec de la mise à jour du profil");
+      return null;
     }
   },
 
-  uploadProfilePicture: async (file: File): Promise<string> => {
+  uploadProfilePicture: async (file: File): Promise<string | null> => {
     try {
       console.log("Envoi de la photo de profil...");
       const formData = new FormData();
@@ -442,13 +386,7 @@ export const profileService = {
       return response.data.profile_picture_url;
     } catch (error: any) {
       console.error("Erreur upload photo:", error);
-      if (error.response) {
-        console.error("Détails de l'erreur:", {
-          status: error.response.status,
-          data: error.response.data
-        });
-      }
-      throw new Error("Échec de l'envoi de la photo de profil");
+      return null;
     }
   }
 };
