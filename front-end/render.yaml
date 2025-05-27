@@ -1,23 +1,20 @@
-service:
-  # Service Frontend (React)
-  - type: staticSite
+version: 1
+services:
+  # Service Frontend (Static Site)
+  - type: static
     name: spotbulle-front-end
-    env: node
+    env: static
     region: frankfurt
-    plan: free
-    rootDir: front-end
-    buildFilter:
-      paths:
-        - "front-end/**"
     buildCommand: |
-      npm install
-      npm run build
-      # Créer un fichier _redirects pour gérer le routage SPA
+      cd front-end && 
+      npm install && 
+      npm run build && 
       echo "/* /index.html 200" > dist/_redirects
-    startCommand: npx serve -s dist
-    healthCheckPath: /
+    publishDir: front-end/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
-      - key: NODE_VERSION
-        value: 20.19.1
-      - key: VITE_API_URL
-        value: https://spotbulle-backend.tydv.onrender.com
+      - key: VITE_API_BASE_URL
+        value: https://spotbulle-backend-tydv.onrender.com/api/v1
