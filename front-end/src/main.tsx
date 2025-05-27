@@ -1,18 +1,22 @@
-// frontend/src/main.tsx
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { BrowserRouter as Router } from "react-router-dom"; // Importer BrowserRouter
-import App from "./App.tsx";
-import { AuthProvider } from "./contexts/AuthContext.tsx"; // Importer AuthProvider
-import "./index.css";
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import App from './App';
+import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import './index.css';
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <Router> {/* Envelopper App avec Router */} 
-      <AuthProvider> {/* Envelopper App avec AuthProvider */} 
-        <App />
-      </AuthProvider>
-    </Router>
-  </StrictMode>
+const container = document.getElementById('root');
+const root = createRoot(container!);
+
+root.render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </ThemeProvider>
+    </BrowserRouter>
+  </React.StrictMode>
 );
-
