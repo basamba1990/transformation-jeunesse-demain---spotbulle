@@ -2,9 +2,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/', // Ajout explicite de la base URL pour éviter les problèmes de chemins en production
+  base: './', // Utiliser des chemins relatifs pour éviter les problèmes de déploiement
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -25,22 +26,25 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    // Amélioration de la gestion des erreurs et des avertissements
-    reportCompressedSize: false, // Améliore la vitesse de build
-    sourcemap: true, // Ajoute des sourcemaps pour faciliter le débogage
+    // Désactiver la minification pour le débogage
+    minify: process.env.NODE_ENV === 'production' ? 'esbuild' : false,
+    sourcemap: true,
     rollupOptions: {
       external: [],
       output: {
-        manualChunks: {
-          // Séparation des dépendances pour améliorer le caching
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          // Autres chunks si nécessaire
-        }
+        // Éviter les problèmes de noms de fichiers avec hachage
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name].[ext]'
       }
     }
   },
   // Optimisation pour la production
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'axios']
+  },
+  // Éviter les erreurs de transpilation
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
   }
 });
