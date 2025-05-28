@@ -5,16 +5,16 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/', // Utiliser des chemins absolus au lieu de './'
+  base: './', // Utiliser des chemins relatifs pour éviter les problèmes de déploiement
   build: {
     outDir: 'dist',
     sourcemap: false, // Désactiver les sourcemaps en production
     rollupOptions: {
       output: {
-        manualChunks: undefined,
-        entryFileNames: 'assets/[name].[hash].js',
-        chunkFileNames: 'assets/[name].[hash].js',
-        assetFileNames: 'assets/[name].[hash].[ext]'
+        // Éviter les problèmes de noms de fichiers avec hachage
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name].[ext]'
       }
     }
   },

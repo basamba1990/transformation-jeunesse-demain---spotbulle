@@ -6,53 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="SpotBulle - Plateforme pour aider les jeunes à trouver un emploi, une formation ou un accompagnement." />
     <title>SpotBulle - Spreading Your Voice, Pitch Your Path</title>
-    <style>
-      /* Style pour le message de test JavaScript */
-      .js-test-message {
-        background-color: #d1f5d3;
-        color: #0a3622;
-        text-align: center;
-        padding: 15px;
-        margin: 10px auto;
-        border-radius: 8px;
-        max-width: 600px;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      }
-    </style>
   </head>
   <body>
     <div id="root"></div>
-    
-    <!-- Message de test JavaScript -->
-    <div class="js-test-message" id="js-test-message">
-      JavaScript fonctionne correctement!
-    </div>
-    
-    <script>
-      // Script de test pour vérifier que JavaScript fonctionne
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('JavaScript est chargé et fonctionne correctement');
-        
-        // Ce script sera exécuté même si React ne se charge pas
-        const jsTestMessage = document.getElementById('js-test-message');
-        if (jsTestMessage) {
-          jsTestMessage.innerHTML = 'JavaScript fonctionne correctement!';
-        }
-        
-        // Vérifier si React se charge correctement
-        setTimeout(function() {
-          const rootElement = document.getElementById('root');
-          if (rootElement && rootElement.children.length > 0) {
-            console.log('React est chargé correctement');
-            // Optionnel: masquer le message de test quand React est chargé
-            // jsTestMessage.style.display = 'none';
-          } else {
-            console.warn('React ne semble pas être chargé correctement');
-          }
-        }, 2000);
-      });
-    </script>
-    
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
