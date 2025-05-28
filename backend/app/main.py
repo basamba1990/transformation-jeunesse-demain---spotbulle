@@ -56,24 +56,22 @@ class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 # Middleware modifié pour gérer la taille des fichiers volumineux
 class LargeFileUploadMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, max_body_size=None):
-        super().__init__(app)
-        self.max_body_size = max_body_size
-        
     async def dispatch(self, request: Request, call_next):
         # Vérification optionnelle de la taille du corps de la requête
         content_length = request.headers.get("content-length")
-        if content_length and self.max_body_size:
-            if int(content_length) > self.max_body_size:
-                from fastapi.responses import JSONResponse
-                return JSONResponse(
-                    status_code=413,
-                    content={"detail": "Taille du fichier trop importante"}
-                )
+        if content_length and int(content_length) > 209715200:  # 200 Mo en octets
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=413,
+                content={"detail": "Taille du fichier trop importante"}
+            )
         return await call_next(request)
 
+# Ajout du middleware pour les fichiers volumineux avec la syntaxe corrigée
+app.add_middleware(LargeFileUploadMiddleware)
+
 # Log des variables d'environnement importantes (sans les valeurs sensibles)
-logger.info(f"PORT environment variable: {os.getenv('PORT', '8000')}")
+logger.info(f"PORT environment variable: {os.getenv('PORT', '8001')}")
 logger.info(f"HOST environment variable: {os.getenv('HOST', '0.0.0.0')}")
 logger.info(f"Environment mode: {os.getenv('ENV', 'production')}")
 
@@ -90,12 +88,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["Content-Range", "X-Total-Count"]
-)
-
-# Ajout du middleware pour les fichiers volumineux avec la syntaxe corrigée
-app.add_middleware(
-    LargeFileUploadMiddleware,
-    max_body_size=209715200  # 200 Mo en octets
 )
 
 app.state.limiter = limiter
