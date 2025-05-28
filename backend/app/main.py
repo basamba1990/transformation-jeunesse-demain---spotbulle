@@ -5,6 +5,11 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import os
+import logging
+
+# Configuration du logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("spotbulle-api")
 
 # Importation explicite des modèles SQLAlchemy
 # Cette ligne est cruciale pour résoudre l'erreur "name 'Pod' is not defined"
@@ -19,7 +24,13 @@ limiter = Limiter(key_func=get_remote_address)
 # Initialisation de la base de données (ajout recommandé)
 from .database import Base, engine
 # Création des tables si elles n'existent pas
-Base.metadata.create_all(bind=engine)
+try:
+    logger.info("Initialisation des tables de la base de données...")
+    Base.metadata.create_all(bind=engine)
+    logger.info("Tables initialisées avec succès")
+except Exception as e:
+    logger.error(f"Erreur lors de l'initialisation des tables: {e}")
+    # Ne pas lever d'exception ici pour permettre à l'application de démarrer même si la BD n'est pas prête
 
 app = FastAPI(
     title="spotbulle-mvp API",
@@ -61,11 +72,19 @@ class LargeFileUploadMiddleware(BaseHTTPMiddleware):
                 )
         return await call_next(request)
 
+# Log des variables d'environnement importantes (sans les valeurs sensibles)
+logger.info(f"PORT environment variable: {os.getenv('PORT', '8000')}")
+logger.info(f"HOST environment variable: {os.getenv('HOST', '0.0.0.0')}")
+logger.info(f"Environment mode: {os.getenv('ENV', 'production')}")
+
+# Configuration CORS avec plus d'origines autorisées
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://spotbulle-front-end.onrender.com",
-        "https://spotbulle-backend-tydv.onrender.com"
+        "https://spotbulle-backend-tydv.onrender.com",
+        # Ajout d'origines supplémentaires si nécessaire
+        "*"  # Temporairement autoriser toutes les origines pour le débogage
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -85,10 +104,12 @@ app.add_middleware(EnhancedSecurityHeadersMiddleware)
 
 @app.get("/")
 async def root_endpoint():
+    logger.info("Root endpoint called")
     return {"message": "API Spotbulle opérationnelle", "version": app.version}
 
 @app.get("/health")
 async def health_check():
+    logger.info("Health check endpoint called")
     return {"status": "ok", "version": app.version}
 
 API_PREFIX = "/api/v1"
@@ -109,13 +130,19 @@ for router, path, tags in route_config:
         tags=tags
     )
 
+# Log de démarrage de l'application
+logger.info(f"Application FastAPI initialisée avec succès, version {app.version}")
+
 # Configuration de Uvicorn pour accepter les fichiers volumineux
 if __name__ == "__main__":
     import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    host = os.getenv("HOST", "0.0.0.0")
+    logger.info(f"Démarrage du serveur Uvicorn sur {host}:{port}")
     uvicorn.run(
         "app.main:app",
-        host=os.getenv("HOST", "0.0.0.0"),
-        port=int(os.getenv("PORT", 8000)),
+        host=host,
+        port=port,
         reload=os.getenv("ENV") == "development",
         log_config=None,
         limit_concurrency=100,
