@@ -1,39 +1,17 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import fs from 'fs';
 
-// Fonction pour s'assurer que index.html est dans le dossier public
-const ensurePublicDir = () => {
-  const publicDir = path.resolve(__dirname, 'public');
-  const indexSource = path.resolve(__dirname, 'index.html');
-  const indexDest = path.resolve(publicDir, 'index.html');
-  
-  if (!fs.existsSync(publicDir)) {
-    fs.mkdirSync(publicDir, { recursive: true });
-  }
-  
-  if (fs.existsSync(indexSource) && !fs.existsSync(indexDest)) {
-    fs.copyFileSync(indexSource, indexDest);
-  }
-};
-
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    {
-      name: 'ensure-public-dir',
-      buildStart() {
-        ensurePublicDir();
-      }
-    },
-    react()
-  ],
+  plugins: [react()],
   base: '/',
   build: {
     outDir: 'dist',
     sourcemap: false,
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html') // Point d'entrée explicite
+      },
       output: {
         entryFileNames: 'assets/[name].[hash].js',
         chunkFileNames: 'assets/[name].[hash].js',
