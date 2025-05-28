@@ -30,4 +30,5 @@ alembic
 slowapi
 python-multipart
 requests
+numpy
 # ffmpeg # pour l'extraction audio - à installer via apt-get sur le serveur
