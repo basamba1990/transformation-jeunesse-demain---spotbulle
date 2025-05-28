@@ -39,7 +39,7 @@ services:
   - type: static
     name: spotbulle-front-end
     env: static
-    region: frankfurt
+    #region: frankfurt
     buildCommand: |
       cd front-end && 
       npm install && 
