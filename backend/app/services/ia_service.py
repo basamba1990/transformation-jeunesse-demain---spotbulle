@@ -1,7 +1,12 @@
+import os
+import logging
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
+
+# --- Configuration du logging ---
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("spotbulle-ia-service")
 
 # --- Configuration SBERT & OpenAI ---
 from ..config import settings
@@ -10,24 +15,44 @@ embedding_model_name = 'all-MiniLM-L6-v2'
 sbert_model = None
 
 if settings.OPENAI_API_KEY:
-    import openai
-    openai.api_key = settings.OPENAI_API_KEY
+    try:
+        import openai
+        openai.api_key = settings.OPENAI_API_KEY
+        logger.info("OpenAI API configurée avec succès")
+    except ImportError:
+        logger.warning("Module OpenAI non disponible")
+        openai = None
 
 # --- Import interne ---
 from ..models import user_model, profile_model, pod_model
 from ..schemas import user_schema, profile_schema, pod_schema
 from ..database import SessionLocal
 
-# --- Chargement paresseux du modèle SBERT ---
-from sentence_transformers import SentenceTransformer
+# --- Fonctions de similarité sans dépendance à sklearn ---
+def cosine_similarity_manual(a, b):
+    """Implémentation manuelle de la similarité cosinus sans sklearn"""
+    try:
+        dot_product = np.dot(a, b)
+        norm_a = np.linalg.norm(a)
+        norm_b = np.linalg.norm(b)
+        return dot_product / (norm_a * norm_b)
+    except Exception as e:
+        logger.error(f"Erreur dans le calcul de similarité cosinus: {e}")
+        return 0.0
 
+# --- Chargement paresseux du modèle SBERT ---
 def load_sbert_model():
     global sbert_model
     if sbert_model is None:
         try:
+            from sentence_transformers import SentenceTransformer
             sbert_model = SentenceTransformer(embedding_model_name)
+            logger.info("Modèle SBERT chargé avec succès")
+        except ImportError:
+            logger.warning("Module sentence_transformers non disponible")
+            sbert_model = None
         except Exception as e:
-            print(f"[Erreur] Chargement paresseux SBERT : {e}")
+            logger.error(f"[Erreur] Chargement paresseux SBERT : {e}")
             sbert_model = None
     return sbert_model
 
@@ -35,19 +60,23 @@ def load_sbert_model():
 def get_embedding_sbert(text: str) -> Optional[List[float]]:
     model = load_sbert_model()
     if not model:
+        logger.warning("Modèle SBERT non disponible pour l'embedding")
         return None
     try:
         return model.encode(text).tolist()
     except Exception as e:
-        print(f"[Erreur] Embedding SBERT : {e}")
+        logger.error(f"[Erreur] Embedding SBERT : {e}")
         return None
 
 def get_embedding_openai(text: str) -> Optional[List[float]]:
+    if not openai:
+        logger.warning("Module OpenAI non disponible pour l'embedding")
+        return None
     try:
         result = openai.Embedding.create(input=[text], model="text-embedding-ada-002")
         return result["data"][0]["embedding"]
     except Exception as e:
-        print(f"[Erreur] Embedding OpenAI : {e}")
+        logger.error(f"[Erreur] Embedding OpenAI : {e}")
         return None
 
 def get_pod_embedding(db: Session, pod_id: int, use_openai: bool = False) -> Optional[List[float]]:
@@ -65,6 +94,8 @@ def get_pod_embedding(db: Session, pod_id: int, use_openai: bool = False) -> Opt
 
 # --- Réponse OpenAI ---
 def generate_openai_response(prompt: str) -> Dict[str, str]:
+    if not openai:
+        return {"error": "Module OpenAI non disponible"}
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -75,6 +106,7 @@ def generate_openai_response(prompt: str) -> Dict[str, str]:
         )
         return {"response": response.choices[0].message.content}
     except Exception as e:
+        logger.error(f"Erreur OpenAI : {e}")
         return {"error": f"Erreur OpenAI : {str(e)}"}
 
 # --- Similarité de profil ---
@@ -115,7 +147,8 @@ def calculate_content_similarity(db: Session, user1_id: int, user2_id: int, use_
     avg1 = np.mean(emb1, axis=0).reshape(1, -1)
     avg2 = np.mean(emb2, axis=0).reshape(1, -1)
 
-    return float(cosine_similarity(avg1, avg2)[0][0])
+    # Utilisation de notre implémentation manuelle au lieu de sklearn
+    return float(cosine_similarity_manual(avg1.flatten(), avg2.flatten()))
 
 # --- IA Matching ---
 async def find_ia_matches(
