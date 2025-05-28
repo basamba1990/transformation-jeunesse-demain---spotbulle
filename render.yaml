@@ -34,24 +34,6 @@ services:
         sync: false
       - key: BUCKET_NAME
         sync: false
-
-# Service Frontend (Static Site)
-  - type: static
-    name: spotbulle-front-end
-    env: static
-    #region: frankfurt
-    buildCommand: |
-      cd front-end && 
-      npm install && 
-      npm run build
-    publishDir: front-end/dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_BASE_URL
-        value: https://spotbulle-backend-tydv.onrender.com/api/v1
         
 databases:
   - name: spotbulle-db
