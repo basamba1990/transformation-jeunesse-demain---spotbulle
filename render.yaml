@@ -1,6 +1,6 @@
 version: 1
 services:
-  # Service Backend (FastAPI)
+ # Service Backend (FastAPI)
   - type: web
     name: spotbulle-backend
     env: python
@@ -12,7 +12,6 @@ services:
         - "backend/**"
     buildCommand: |
       pip install --upgrade pip
-      python fix_dependencies.py
       pip install -r requirements.txt
       python create_tables.py
       alembic upgrade head 
@@ -36,39 +35,23 @@ services:
       - key: BUCKET_NAME
         sync: false
 
-  # Service Frontend (StaticSite)
-  - type: web
+# Service Frontend (Static Site)
+  - type: static
     name: spotbulle-front-end
     env: static
-    # Ligne region: frankfurt supprimée ici
-    plan: free
-    rootDir: front-end
-    buildFilter:
-      paths:
-        - "front-end/**"
+    region: frankfurt
     buildCommand: |
-      npm install
+      cd front-end && 
+      npm install && 
       npm run build
-      echo "Contenu du répertoire dist après build:"
-      ls -la ./dist
-    staticPublishPath: ./dist
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: no-cache
-      - path: /*
-        name: X-Frame-Options
-        value: SAMEORIGIN
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
+    publishDir: front-end/dist
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
     envVars:
-      - key: NODE_VERSION
-        value: 20.19.1
+      - key: VITE_API_BASE_URL
+        value: https://spotbulle-backend-tydv.onrender.com/api/v1
         
 databases:
   - name: spotbulle-db
