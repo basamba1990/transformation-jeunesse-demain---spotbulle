@@ -136,7 +136,7 @@ logger.info(f"Application FastAPI initialisée avec succès, version {app.versio
 # Configuration de Uvicorn pour accepter les fichiers volumineux
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.getenv("PORT", 8001))
     host = os.getenv("HOST", "0.0.0.0")
     logger.info(f"Démarrage du serveur Uvicorn sur {host}:{port}")
     uvicorn.run(
