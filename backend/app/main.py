@@ -79,8 +79,8 @@ logger.info(f"Environment mode: {os.getenv('ENV', 'production')}")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://spotbulle-front-end.onrender.com",
-        "https://spotbulle-backend-tydv.onrender.com",
+        "https://spotbulle-mentor.onrender.com",
+        "https://spotbulle-backend-0lax.onrender.com",
         # Ajout d'origines supplémentaires si nécessaire
         "*"  # Temporairement autoriser toutes les origines pour le débogage
     ],
