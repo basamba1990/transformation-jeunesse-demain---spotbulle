@@ -3,7 +3,7 @@ import type { DISCScores, DISCResults } from "../schemas/disc_schema";
 
 // Configuration de la base URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  "https://spotbulle-backend-tydv.onrender.com/api/v1";
+  "https://spotbulle-backend-0lax.onrender.com/api/v1";
 
 // Constante pour la taille maximale des fichiers (200 Mo)
 const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200 Mo en octets
