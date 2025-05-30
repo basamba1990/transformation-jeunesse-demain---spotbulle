@@ -9,9 +9,6 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'index.html')
-      },
       output: {
         // Simplifier les noms de fichiers pour éviter les problèmes de cache et de chemins
         entryFileNames: 'assets/[name].js',
