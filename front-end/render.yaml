@@ -1,18 +1,20 @@
-# Service Frontend (Static Site)
-- type: static
-  name: spotbulle-front-end
-  env: static
-  buildCommand: |
-    cd front-end && npm install && npm run build
-  publishDir: front-end/dist
-  routes:
-    - type: rewrite
-      source: /*
-      destination: /index.html
-  headers:
-    - path: /*
-      name: Cache-Control
-      value: no-cache
-  envVars:
-    - key: VITE_API_BASE_URL
-      value: https://spotbulle-backend-tydv.onrender.com/api/v1
+version: 1
+services:
+  # Service Frontend (Static Site)
+  - type: static
+    name: spotbulle-mentor
+    env: static
+    region: frankfurt
+    buildCommand: |
+      cd front-end && 
+      npm install && 
+      npm run build && 
+      cp -r public/assets dist/assets
+    publishDir: front-end/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://spotbulle-backend-0lax.onrender.com/api/v1
