@@ -11,7 +11,7 @@
       window.addEventListener('error', function(e) {
         console.error('Erreur de chargement détectée:', e);
       });
-      
+         
       // Vérifier si l'application React se charge correctement
       setTimeout(function() {
         const rootElement = document.getElementById('root');
@@ -35,8 +35,8 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- IMPORTANT: Ne pas référencer directement /src/main.tsx en production -->
-    <!-- Le build Vite remplacera automatiquement cette ligne par la référence au bundle JS -->
+    <!-- Ne pas référencer directement /src/main.tsx -->
+    <!-- Laisser Vite injecter le bon chemin lors du build -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
