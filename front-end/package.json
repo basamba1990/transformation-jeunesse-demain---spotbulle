@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && cp staticwebapp.config.json dist/",
     "postbuild": "cp -r public/* dist/",
     "preview": "vite preview --port 4173"
   },

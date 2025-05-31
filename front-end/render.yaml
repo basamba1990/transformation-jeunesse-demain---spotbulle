@@ -9,7 +9,8 @@ services:
       cd front-end && 
       npm install && 
       npm run build && 
-      cp -r public/assets dist/assets
+      cp -r public/assets dist/assets && 
+      cp staticwebapp.config.json dist/
     publishDir: front-end/dist
     routes:
       - type: rewrite
@@ -17,4 +18,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://spotbulle-backend-0lax.onrender.com/api/v1
+        value: https://spotbulle-backend-01ax.onrender.com/api/v1
