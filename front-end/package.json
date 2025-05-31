@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "cp -r public/assets dist/assets",
+    "postbuild": "cp -r public/* dist/",
     "preview": "vite preview --port 4173"
   },
   "engines": {
