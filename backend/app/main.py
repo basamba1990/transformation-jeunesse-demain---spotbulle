@@ -79,6 +79,7 @@ logger.info(f"Environment mode: {os.getenv('ENV', 'production')}")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://spotbulle-intelligent.vercel.app/login",
         "https://spotbulle-mentor.onrender.com",
         "https://spotbulle-backend-0lax.onrender.com",
         # Ajout d'origines supplémentaires si nécessaire
