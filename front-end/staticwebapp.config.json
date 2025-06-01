@@ -7,7 +7,6 @@
     }
   ],
   "navigationFallback": {
-    "rewrite": "/index.html",
-    "exclude": ["/static/*", "/assets/*", "/*.css", "/*.js"]
+    "rewrite": "/index.html"
   }
 }
