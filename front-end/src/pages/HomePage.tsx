@@ -22,7 +22,6 @@ const HomePage: React.FC = () => {
             vos valeurs et vos intérêts.
           </p>
           
-          {/* Audio supprimé car le fichier sample.mp3 n'existe pas */}
           <div className="text-sm text-amber-500 mt-2">
             Audio temporairement indisponible
           </div>
