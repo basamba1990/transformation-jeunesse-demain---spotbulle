@@ -1,8 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { aiService } from '@services/api';
+import { useAuth } from '@contexts/AuthContext';
 import type { IUser, IProfile } from '@services/api';
+
+// Création d'un service temporaire pour remplacer aiService
+const tempMatchService = {
+  getMatches: async (limit: number): Promise<any[]> => {
+    // Retourne des données fictives pour le test
+    return [
+      {
+        user: {
+          id: 1,
+          email: "utilisateur1@example.com",
+          full_name: "Utilisateur Test 1"
+        },
+        profile: {
+          bio: "Passionné de développement et de nouvelles technologies",
+          disc_type: "D",
+          interests: ["Développement", "Musique", "Voyages"]
+        },
+        match_score: 0.85,
+        score_details: {
+          disc_score: 0.9,
+          interests_score: 0.8,
+          content_score: 0.85,
+          objectives_score: 0.75
+        },
+        match_reason: "Forte compatibilité basée sur des intérêts communs et un profil DISC complémentaire"
+      }
+    ];
+  }
+};
 
 interface IAMatch {
   user: IUser;
@@ -20,7 +48,6 @@ interface IAMatch {
 const MatchCard: React.FC<{ match: IAMatch }> = ({ match }) => {
   const profileImageUrl = match.profile?.profile_picture_url || 'https://via.placeholder.com/150';
   const userFullName = match.user.full_name || match.user.email;
-
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mb-6 transition-transform hover:scale-105">
       <div className="flex items-center mb-4">
@@ -38,18 +65,15 @@ const MatchCard: React.FC<{ match: IAMatch }> = ({ match }) => {
           )}
         </div>
       </div>
-
       <p className="text-gray-600 mb-1">
         Score de compatibilité :
         <span className={`font-bold ml-1 ${match.match_score > 0.7 ? 'text-green-600' : match.match_score > 0.4 ? 'text-yellow-600' : 'text-red-600'}`}>
           {(match.match_score * 100).toFixed(0)}%
         </span>
       </p>
-
       {match.profile?.bio && (
         <p className="text-gray-700 mb-2 italic line-clamp-2">Bio : {match.profile.bio}</p>
       )}
-
       {match.profile?.interests?.length > 0 && (
         <div className="mb-3">
           <h4 className="font-semibold text-sm text-gray-700">Intérêts communs :</h4>
@@ -62,7 +86,6 @@ const MatchCard: React.FC<{ match: IAMatch }> = ({ match }) => {
           </div>
         </div>
       )}
-
       <details className="mb-2 text-sm">
         <summary className="cursor-pointer text-blue-600 hover:underline">Détails du score</summary>
         <ul className="mt-2 list-disc list-inside bg-gray-50 p-3 rounded">
@@ -72,9 +95,7 @@ const MatchCard: React.FC<{ match: IAMatch }> = ({ match }) => {
           <li>Objectifs : {(match.score_details.objectives_score * 100).toFixed(0)}%</li>
         </ul>
       </details>
-
       <p className="text-xs text-gray-500 mb-4">{match.match_reason}</p>
-
       <Link
         to={`/user/${match.user.id}`}
         className="block bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 text-center rounded"
@@ -101,7 +122,7 @@ const MatchesPage: React.FC = () => {
 
     const loadMatches = async () => {
       try {
-        const fetchedMatches = await aiService.getMatches(10);
+        const fetchedMatches = await tempMatchService.getMatches(10);
         setMatches(fetchedMatches);
       } catch (err) {
         console.error("Erreur lors de la récupération des matchs IA:", err);
@@ -143,7 +164,6 @@ const MatchesPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-500 to-indigo-700 py-8 px-4">
       <div className="container mx-auto">
         <h1 className="text-4xl font-extrabold text-white mb-10 text-center">Vos Recommandations Personnalisées</h1>
-
         {matches.length === 0 ? (
           <div className="text-center bg-white p-8 rounded shadow-md">
             <p className="text-xl text-gray-600">Aucune recommandation pour le moment.</p>
