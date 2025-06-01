@@ -39,7 +39,7 @@ const Navbar: React.FC = () => {
           <Link to="/" className="flex-shrink-0 group">
             <div className="flex items-center">
               <img 
-                src="/assets/logo_spotbulle.png" 
+                src="./assets/logo_spotbulle.png" 
                 alt="SpotBulle" 
                 className="h-10 w-auto" 
               />
