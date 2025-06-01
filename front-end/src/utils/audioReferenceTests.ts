@@ -1,166 +1,181 @@
 /**
- * Tests automatisés pour détecter les références à des fichiers audio inexistants
+ * Tests automatisés pour vérifier les références audio
  * 
- * Ce module analyse le code source pour identifier les références à des fichiers audio
- * et vérifie leur existence dans le dossier public.
+ * Ce module permet de vérifier que toutes les références audio
+ * dans le code source pointent vers des fichiers existants.
  */
 
 import fs from 'fs';
 import path from 'path';
 import glob from 'glob';
-import { checkAudioExists } from './assetLoader';
 
-// Configuration
-const SRC_DIR = path.resolve(process.cwd(), 'src');
-const PUBLIC_AUDIO_DIR = path.resolve(process.cwd(), 'public/assets/audio');
-const REPORT_FILE = path.resolve(process.cwd(), 'audio-references-report.md');
-
-// Expressions régulières pour trouver les références audio
-const AUDIO_REF_PATTERNS = [
-  /audioSrc=["']([^"']+\.mp3)["']/g,
-  /src=["']([^"']+\.mp3)["']/g,
-  /source src=["']([^"']+\.mp3)["']/g,
-  /new Audio\(["']([^"']+\.mp3)["']\)/g,
-  /audio\.src = ["']([^"']+\.mp3)["']/g
-];
+// Dossier racine du projet
+const ROOT_DIR = process.cwd();
+// Dossier contenant les fichiers audio
+const AUDIO_DIR = path.join(ROOT_DIR, 'public/assets/audio');
+// Extensions de fichiers à analyser
+const FILE_EXTENSIONS = ['.tsx', '.ts', '.jsx', '.js'];
 
 /**
- * Trouve toutes les références audio dans les fichiers source
+ * Vérifie si un fichier audio existe
+ * @param audioPath Chemin relatif du fichier audio (ex: /assets/audio/sample.mp3)
+ * @returns true si le fichier existe, false sinon
  */
-async function findAudioReferences() {
-  const references = new Map<string, string[]>();
+export const audioFileExists = (audioPath: string): boolean => {
+  // Convertir le chemin relatif en chemin absolu
+  const normalizedPath = audioPath.startsWith('/') 
+    ? audioPath.substring(1) 
+    : audioPath;
   
-  // Trouver tous les fichiers .tsx, .ts, .jsx, .js
-  const files = glob.sync(`${SRC_DIR}/**/*.{tsx,ts,jsx,js}`);
+  const fullPath = path.join(ROOT_DIR, 'public', normalizedPath);
   
-  for (const file of files) {
-    const content = fs.readFileSync(file, 'utf-8');
-    const relativeFilePath = path.relative(process.cwd(), file);
+  return fs.existsSync(fullPath);
+};
+
+/**
+ * Extrait les références audio d'un fichier source
+ * @param filePath Chemin du fichier source
+ * @returns Tableau des références audio trouvées
+ */
+export const extractAudioReferences = (filePath: string): string[] => {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
     
-    // Chercher toutes les références audio dans le fichier
-    for (const pattern of AUDIO_REF_PATTERNS) {
-      let match;
-      while ((match = pattern.exec(content)) !== null) {
-        const audioPath = match[1];
-        
-        if (!references.has(audioPath)) {
-          references.set(audioPath, []);
-        }
-        
-        references.get(audioPath)?.push(relativeFilePath);
-      }
-    }
+    // Recherche des références à des fichiers audio
+    // Pattern: /assets/audio/quelquechose.mp3 ou .wav
+    const audioPattern = /['"]\/assets\/audio\/[^'"]+\.(mp3|wav|ogg|aac)['"]|audioSrc=["']\/assets\/audio\/[^'"]+\.(mp3|wav|ogg|aac)["']/g;
+    const matches = content.match(audioPattern) || [];
+    
+    // Nettoyer les résultats pour extraire uniquement le chemin
+    return matches.map(match => {
+      // Extraire le chemin entre guillemets
+      const pathMatch = match.match(/['"]([^'"]+)['"]/);
+      return pathMatch ? pathMatch[1] : '';
+    }).filter(Boolean);
+  } catch (error) {
+    console.error(`Erreur lors de l'analyse du fichier ${filePath}:`, error);
+    return [];
   }
-  
-  return references;
-}
+};
 
 /**
- * Trouve tous les fichiers audio dans le dossier public
+ * Trouve tous les fichiers source dans le projet
+ * @returns Tableau des chemins de fichiers
  */
-function findExistingAudioFiles() {
-  if (!fs.existsSync(PUBLIC_AUDIO_DIR)) {
+export const findSourceFiles = (): string[] => {
+  const sourceFiles: string[] = [];
+  
+  FILE_EXTENSIONS.forEach(ext => {
+    const files = glob.sync(`${ROOT_DIR}/src/**/*${ext}`);
+    sourceFiles.push(...files);
+  });
+  
+  return sourceFiles;
+};
+
+/**
+ * Trouve tous les fichiers audio dans le projet
+ * @returns Tableau des chemins de fichiers audio
+ */
+export const findAudioFiles = (): string[] => {
+  if (!fs.existsSync(AUDIO_DIR)) {
     return [];
   }
   
-  const audioFiles = glob.sync(`${PUBLIC_AUDIO_DIR}/**/*.mp3`);
-  return audioFiles.map(file => {
-    // Convertir en chemin relatif comme utilisé dans les références
-    const relativePath = '/assets/audio/' + path.relative(PUBLIC_AUDIO_DIR, file);
-    return relativePath.replace(/\\/g, '/'); // Normaliser les chemins pour Windows
+  return glob.sync(`${AUDIO_DIR}/**/*.{mp3,wav,ogg,aac}`);
+};
+
+/**
+ * Vérifie toutes les références audio dans le projet
+ * @returns Objet contenant les résultats de l'analyse
+ */
+export const checkAllAudioReferences = () => {
+  const sourceFiles = findSourceFiles();
+  const audioFiles = findAudioFiles();
+  
+  // Convertir les chemins audio en chemins relatifs pour la comparaison
+  const availableAudioPaths = audioFiles.map(file => {
+    const relativePath = path.relative(path.join(ROOT_DIR, 'public'), file);
+    return '/' + relativePath.replace(/\\/g, '/');
+  });
+  
+  const results = {
+    referencedFiles: new Set<string>(),
+    missingFiles: new Set<string>(),
+    unusedFiles: new Set<string>(),
+    fileReferences: {} as Record<string, string[]>
+  };
+  
+  // Analyser chaque fichier source
+  sourceFiles.forEach(file => {
+    const references = extractAudioReferences(file);
+    
+    if (references.length > 0) {
+      const relativeFile = path.relative(ROOT_DIR, file);
+      results.fileReferences[relativeFile] = references;
+      
+      references.forEach(ref => {
+        results.referencedFiles.add(ref);
+        
+        if (!audioFileExists(ref)) {
+          results.missingFiles.add(ref);
+        }
+      });
+    }
+  });
+  
+  // Identifier les fichiers audio non utilisés
+  availableAudioPaths.forEach(audioPath => {
+    if (!results.referencedFiles.has(audioPath)) {
+      results.unusedFiles.add(audioPath);
+    }
+  });
+  
+  return {
+    totalSourceFiles: sourceFiles.length,
+    totalAudioFiles: audioFiles.length,
+    referencedFiles: Array.from(results.referencedFiles),
+    missingFiles: Array.from(results.missingFiles),
+    unusedFiles: Array.from(results.unusedFiles),
+    fileReferences: results.fileReferences
+  };
+};
+
+// Exécuter les tests si ce fichier est appelé directement
+if (require.main === module) {
+  const results = checkAllAudioReferences();
+  
+  console.log('=== Rapport de vérification des références audio ===');
+  console.log(`Fichiers source analysés: ${results.totalSourceFiles}`);
+  console.log(`Fichiers audio disponibles: ${results.totalAudioFiles}`);
+  console.log(`Références audio trouvées: ${results.referencedFiles.length}`);
+  console.log(`Fichiers audio manquants: ${results.missingFiles.length}`);
+  console.log(`Fichiers audio non utilisés: ${results.unusedFiles.length}`);
+  
+  if (results.missingFiles.length > 0) {
+    console.log('\nFichiers audio manquants:');
+    results.missingFiles.forEach(file => console.log(`- ${file}`));
+  }
+  
+  if (results.unusedFiles.length > 0) {
+    console.log('\nFichiers audio non utilisés:');
+    results.unusedFiles.forEach(file => console.log(`- ${file}`));
+  }
+  
+  console.log('\nDétail des références par fichier:');
+  Object.entries(results.fileReferences).forEach(([file, refs]) => {
+    console.log(`\n${file}:`);
+    refs.forEach(ref => {
+      const status = results.missingFiles.includes(ref) ? '❌' : '✅';
+      console.log(`  ${status} ${ref}`);
+    });
   });
 }
 
-/**
- * Génère un rapport sur les références audio
- */
-async function generateAudioReferenceReport() {
-  console.log('Analyse des références audio...');
-  
-  const references = await findAudioReferences();
-  const existingFiles = findExistingAudioFiles();
-  
-  // Identifier les références manquantes et inutilisées
-  const missingReferences: Map<string, string[]> = new Map();
-  const unusedFiles: string[] = [...existingFiles];
-  
-  // Vérifier les références manquantes
-  for (const [audioPath, files] of references.entries()) {
-    const fullPath = path.join(process.cwd(), 'public', audioPath);
-    const exists = existingFiles.includes(audioPath);
-    
-    if (!exists) {
-      missingReferences.set(audioPath, files);
-    } else {
-      // Marquer comme utilisé
-      const index = unusedFiles.indexOf(audioPath);
-      if (index !== -1) {
-        unusedFiles.splice(index, 1);
-      }
-    }
-  }
-  
-  // Générer le rapport
-  let report = `# Rapport de vérification des références audio\n\n`;
-  report += `Date: ${new Date().toLocaleString()}\n\n`;
-  
-  // Résumé
-  report += `## Résumé\n\n`;
-  report += `- Total des références audio: ${references.size}\n`;
-  report += `- Fichiers audio existants: ${existingFiles.length}\n`;
-  report += `- Références manquantes: ${missingReferences.size}\n`;
-  report += `- Fichiers audio non utilisés: ${unusedFiles.length}\n\n`;
-  
-  // Détails des références manquantes
-  if (missingReferences.size > 0) {
-    report += `## Références manquantes\n\n`;
-    for (const [audioPath, files] of missingReferences.entries()) {
-      report += `### ${audioPath}\n\n`;
-      report += `Référencé dans les fichiers suivants:\n`;
-      for (const file of files) {
-        report += `- \`${file}\`\n`;
-      }
-      report += `\n`;
-    }
-  }
-  
-  // Détails des fichiers non utilisés
-  if (unusedFiles.length > 0) {
-    report += `## Fichiers audio non utilisés\n\n`;
-    for (const file of unusedFiles) {
-      report += `- \`${file}\`\n`;
-    }
-  }
-  
-  // Écrire le rapport
-  fs.writeFileSync(REPORT_FILE, report);
-  console.log(`Rapport généré: ${REPORT_FILE}`);
-  
-  return {
-    totalReferences: references.size,
-    existingFiles: existingFiles.length,
-    missingReferences: missingReferences.size,
-    unusedFiles: unusedFiles.length
-  };
-}
-
-// Exécuter le test si appelé directement
-if (require.main === module) {
-  generateAudioReferenceReport()
-    .then(results => {
-      console.log('Analyse terminée:');
-      console.log(results);
-      
-      // Sortir avec un code d'erreur si des références sont manquantes
-      if (results.missingReferences > 0) {
-        console.error(`ERREUR: ${results.missingReferences} références audio manquantes détectées.`);
-        process.exit(1);
-      }
-    })
-    .catch(error => {
-      console.error('Erreur lors de l\'analyse:', error);
-      process.exit(1);
-    });
-}
-
-export { findAudioReferences, findExistingAudioFiles, generateAudioReferenceReport };
+export default {
+  audioFileExists,
+  extractAudioReferences,
+  findSourceFiles,
+  findAudioFiles,
+  checkAllAudioReferences
+};

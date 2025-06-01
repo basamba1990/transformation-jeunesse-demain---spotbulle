@@ -1,23 +1,29 @@
 /**
- * Utilitaire de préchargement et gestion des ressources audio
+ * Utilitaire de préchargement des ressources audio
  * 
- * Ce module fournit des fonctions pour précharger, vérifier et gérer
- * les ressources audio dans l'application SpotBulle.
+ * Ce module permet de précharger les ressources audio pour éviter les erreurs
+ * de chargement et améliorer l'expérience utilisateur.
  */
 
-// Cache pour stocker les ressources audio préchargées
-const audioCache: Record<string, HTMLAudioElement> = {};
+// Tableau des chemins audio à précharger
+const audioResources = [
+  '/assets/audio/samples_jfk.mp3',
+  '/assets/audio/EconomicModel.wav'
+];
+
+// Cache pour stocker les ressources préchargées
+const audioCache = new Map<string, HTMLAudioElement>();
 
 /**
- * Précharge une ressource audio et la stocke dans le cache
- * @param src - Chemin de la ressource audio
+ * Précharge une ressource audio spécifique
+ * @param src Chemin de la ressource audio
  * @returns Promise qui se résout lorsque l'audio est chargé ou rejeté en cas d'erreur
  */
 export const preloadAudio = (src: string): Promise<HTMLAudioElement> => {
   return new Promise((resolve, reject) => {
     // Vérifier si l'audio est déjà dans le cache
-    if (audioCache[src]) {
-      resolve(audioCache[src]);
+    if (audioCache.has(src)) {
+      resolve(audioCache.get(src)!);
       return;
     }
 
@@ -26,110 +32,62 @@ export const preloadAudio = (src: string): Promise<HTMLAudioElement> => {
     
     // Configurer les gestionnaires d'événements
     audio.addEventListener('canplaythrough', () => {
-      // Stocker dans le cache et résoudre la promesse
-      audioCache[src] = audio;
+      audioCache.set(src, audio);
       resolve(audio);
     }, { once: true });
     
     audio.addEventListener('error', (e) => {
-      console.error(`Erreur lors du chargement de l'audio: ${src}`, e);
+      console.error(`Erreur lors du préchargement de l'audio ${src}:`, e);
       reject(new Error(`Impossible de charger la ressource audio: ${src}`));
     }, { once: true });
     
-    // Définir la source et commencer le chargement
+    // Commencer le chargement
     audio.src = src;
     audio.load();
   });
 };
 
 /**
- * Vérifie si une ressource audio existe
- * @param src - Chemin de la ressource audio
- * @returns Promise qui se résout à true si la ressource existe, false sinon
- */
-export const checkAudioExists = async (src: string): Promise<boolean> => {
-  try {
-    const response = await fetch(src, { method: 'HEAD' });
-    return response.ok;
-  } catch (error) {
-    console.error(`Erreur lors de la vérification de l'audio: ${src}`, error);
-    return false;
-  }
-};
-
-/**
- * Précharge plusieurs ressources audio en parallèle
- * @param sources - Tableau de chemins de ressources audio
+ * Précharge toutes les ressources audio définies
  * @returns Promise qui se résout lorsque toutes les ressources sont chargées
  */
-export const preloadMultipleAudio = async (sources: string[]): Promise<Record<string, HTMLAudioElement>> => {
-  const results: Record<string, HTMLAudioElement> = {};
-  
-  // Créer un tableau de promesses pour le chargement parallèle
-  const promises = sources.map(async (src) => {
-    try {
-      const audio = await preloadAudio(src);
-      results[src] = audio;
-    } catch (error) {
-      console.warn(`Échec du préchargement pour: ${src}`, error);
-      // Ne pas bloquer le chargement des autres ressources
-    }
-  });
-  
-  // Attendre que toutes les promesses soient résolues
-  await Promise.all(promises);
-  
-  return results;
-};
-
-/**
- * Joue une ressource audio préchargée
- * @param src - Chemin de la ressource audio
- * @returns Promise qui se résout lorsque l'audio commence à jouer
- */
-export const playAudio = async (src: string): Promise<void> => {
+export const preloadAllAudio = async (): Promise<void> => {
   try {
-    // Précharger si pas déjà dans le cache
-    if (!audioCache[src]) {
-      await preloadAudio(src);
-    }
+    const promises = audioResources.map(src => 
+      preloadAudio(src).catch(err => {
+        console.warn(`Échec du préchargement de ${src}:`, err);
+        return null; // Continuer malgré l'erreur
+      })
+    );
     
-    // Réinitialiser et jouer
-    const audio = audioCache[src];
-    audio.currentTime = 0;
-    return audio.play();
+    await Promise.all(promises);
+    console.log('Préchargement audio terminé');
   } catch (error) {
-    console.error(`Erreur lors de la lecture audio: ${src}`, error);
-    throw error;
+    console.error('Erreur lors du préchargement audio:', error);
   }
 };
 
 /**
- * Libère les ressources d'une entrée du cache
- * @param src - Chemin de la ressource audio à libérer
+ * Vérifie si une ressource audio est disponible dans le cache
+ * @param src Chemin de la ressource audio
+ * @returns true si la ressource est disponible, false sinon
  */
-export const releaseAudio = (src: string): void => {
-  if (audioCache[src]) {
-    audioCache[src].src = '';
-    delete audioCache[src];
-  }
+export const isAudioCached = (src: string): boolean => {
+  return audioCache.has(src);
 };
 
 /**
- * Vide complètement le cache audio
+ * Récupère une ressource audio du cache
+ * @param src Chemin de la ressource audio
+ * @returns L'élément audio ou null s'il n'est pas dans le cache
  */
-export const clearAudioCache = (): void => {
-  Object.keys(audioCache).forEach(key => {
-    audioCache[key].src = '';
-    delete audioCache[key];
-  });
+export const getAudioFromCache = (src: string): HTMLAudioElement | null => {
+  return audioCache.get(src) || null;
 };
 
 export default {
   preloadAudio,
-  checkAudioExists,
-  preloadMultipleAudio,
-  playAudio,
-  releaseAudio,
-  clearAudioCache
+  preloadAllAudio,
+  isAudioCached,
+  getAudioFromCache
 };
