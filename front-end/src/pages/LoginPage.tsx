@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "@contexts/AuthContext";
-import { authService } from "@services/api";
+import { useAuth } from "../contexts/AuthContext";
+import { authService } from "../services/api";
 import { Button } from "@components/ui/Button";
 import { 
   Card, 
@@ -58,29 +58,19 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Passer un objet avec email et password
-      const userData = {
-        email: email,
-        password: password
-      };
-
-      // Appel via authService
-      const token = await authService.loginUser(userData);
+      // Utiliser directement la fonction login du contexte d'authentification
+      const success = await login(email, password);
       
-      if (token) {
-        // CORRECTION: Stocker explicitement le token dans localStorage
-        localStorage.setItem("spotbulle_token", token);
-        console.log("Token stocké dans localStorage:", token);
-        
-        // Récupérer les données utilisateur avec le token maintenant disponible
-        const userData = await authService.getCurrentUser();
-        login(token, userData);
-        navigate("/profile/me");
+      if (success) {
+        console.log("Connexion réussie");
+        navigate("/profile");
+      } else {
+        setError("Identifiants incorrects. Veuillez réessayer.");
       }
     } catch (err: any) {
       console.error("Erreur de connexion :", err);
       setError(
-        err.response?.data?.detail || 
+        err.message || 
         "Une erreur est survenue lors de la connexion. Veuillez réessayer."
       );
     } finally {

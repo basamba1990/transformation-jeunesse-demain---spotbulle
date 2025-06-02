@@ -1,26 +1,34 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { authService } from "../services/api";
-import { Button } from "../components/ui/Button";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "../components/ui/Card";
-import { UserPlus, Mail, Lock, User as UserIcon } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { UserIcon, Mail, Lock, UserPlus } from 'lucide-react';
+import { Button } from "@components/ui/Button";
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardContent, 
+  CardFooter, 
+  CardDescription 
+} from "@components/ui/Card";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
-  className?: string;
+  id: string;
 }
 
-const Input: React.FC<InputProps> = ({ className = '', type, icon, ...props }) => {
+const Input: React.FC<InputProps> = ({ className = '', type, icon, id, ...props }) => {
   return (
     <div className="relative">
       {icon && (
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          {React.cloneElement(icon as React.ReactElement, { className: "h-5 w-5 text-neutral-default" })}
+          {React.cloneElement(icon as React.ReactElement, { className: "h-5 w-5 text-neutral-400" })}
         </div>
       )}
       <input
+        id={id}
         type={type}
-        className={`block w-full ${icon ? 'pl-10' : 'pl-3'} pr-3 py-2 border border-neutral-light rounded-md shadow-sm placeholder-neutral-default focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${className}`}
+        className={`block w-full ${icon ? 'pl-10' : 'pl-3'} pr-3 py-2 border border-neutral-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors ${className}`}
         {...props}
       />
     </div>
@@ -36,37 +44,36 @@ const RegisterPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
     setSuccessMessage(null);
-
+    
     if (password !== confirmPassword) {
       setError("Les mots de passe ne correspondent pas.");
       return;
     }
-
+    
     setIsLoading(true);
+    
     try {
-      await authService.register({
-        email,
-        password,
-        full_name: fullName
-      });
+      // Utiliser directement la fonction register du contexte d'authentification
+      const success = await register(email, password, fullName);
       
-      setSuccessMessage("Inscription réussie ! Vous allez être redirigé vers la page de connexion.");
-      setTimeout(() => navigate("/login"), 3000);
-    } catch (err: any) {
-      console.error("Registration error:", err);
-      if (err.response?.status === 404) {
-        setError("Le service d'inscription est actuellement indisponible (erreur 404). Veuillez réessayer plus tard ou contacter le support.");
+      if (success) {
+        setSuccessMessage("Inscription réussie ! Vous allez être redirigé vers la page de connexion.");
+        setTimeout(() => navigate("/login"), 3000);
       } else {
-        const errorMessage = err.response?.data?.detail || "Une erreur est survenue lors de l'inscription";
-        setError(Array.isArray(errorMessage) ? errorMessage.join(", ") : errorMessage);
+        setError("L'inscription a échoué. Veuillez réessayer.");
       }
+    } catch (err: any) {
+      console.error("Erreur d'inscription:", err);
+      setError(err.message || "Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (
@@ -74,11 +81,13 @@ const RegisterPage: React.FC = () => {
       <Link to="/" className="mb-8">
         <h1 className="text-4xl font-bold text-primary hover:text-primary-dark transition-colors">Spotbulle</h1>
       </Link>
+      
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Créez votre compte</CardTitle>
           <CardDescription>Rejoignez la communauté Spotbulle dès aujourd'hui.</CardDescription>
         </CardHeader>
+        
         <CardContent>
           {error && <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4">{error}</div>}
           {successMessage && <div className="bg-green-100 text-green-700 p-3 rounded-md mb-4">{successMessage}</div>}
@@ -96,6 +105,7 @@ const RegisterPage: React.FC = () => {
                 required 
               />
             </div>
+            
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-neutral-darker">Adresse email</label>
               <Input 
@@ -108,6 +118,7 @@ const RegisterPage: React.FC = () => {
                 required 
               />
             </div>
+            
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-neutral-darker">Mot de passe</label>
               <Input 
@@ -120,6 +131,7 @@ const RegisterPage: React.FC = () => {
                 required 
               />
             </div>
+            
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-darker">Confirmer le mot de passe</label>
               <Input 
@@ -132,10 +144,11 @@ const RegisterPage: React.FC = () => {
                 required 
               />
             </div>
+            
             <Button 
               type="submit" 
               className="w-full" 
-              isLoading={isLoading}
+              disabled={isLoading}
               variant="secondary"
             >
               <UserPlus size={20} className="mr-2" />
@@ -143,6 +156,7 @@ const RegisterPage: React.FC = () => {
             </Button>
           </form>
         </CardContent>
+        
         <CardFooter className="text-center">
           <p className="text-sm text-gray-600">
             Déjà un compte ?{" "}
@@ -157,4 +171,3 @@ const RegisterPage: React.FC = () => {
 };
 
 export default RegisterPage;
-
