@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -15,12 +16,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <header className="bg-blue-600 text-white p-4 shadow-md">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <span className="text-xl font-bold">SpotBulle</span>
+            <Link to="/" className="text-xl font-bold hover:text-blue-200">SpotBulle</Link>
           </div>
           <nav className="hidden md:flex space-x-4">
-            <a href="/" className="hover:text-blue-200">Accueil</a>
-            <a href="/resources" className="hover:text-blue-200">Ressources</a>
-            <a href="/profile" className="hover:text-blue-200">Profil</a>
+            <Link to="/" className="hover:text-blue-200">Accueil</Link>
+            <Link to="/resources" className="hover:text-blue-200">Ressources</Link>
+            <Link to="/profile" className="hover:text-blue-200">Profil</Link>
             {isAuthenticated ? (
               <button 
                 onClick={logout}
@@ -29,7 +30,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 Déconnexion
               </button>
             ) : (
-              <a href="/login" className="hover:text-blue-200">Connexion</a>
+              <Link to="/login" className="hover:text-blue-200">Connexion</Link>
             )}
             <button 
               onClick={toggleDarkMode}
