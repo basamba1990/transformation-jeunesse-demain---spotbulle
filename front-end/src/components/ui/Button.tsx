@@ -11,7 +11,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button: React.FC<ButtonProps> = React.forwardRef<HTMLButtonElement, ButtonProps>((
   { 
-    className, 
+    className = '', 
     variant = 'primary', 
     size = 'md', 
     isLoading = false, 
@@ -41,7 +41,6 @@ const Button: React.FC<ButtonProps> = React.forwardRef<HTMLButtonElement, Button
     icon: "h-10 w-10", // Pour les boutons contenant uniquement une icône
   };
 
-  const Comp = asChild ? React.Fragment : 'button';
   const buttonContent = (
     <>
       {isLoading && (
@@ -54,19 +53,24 @@ const Button: React.FC<ButtonProps> = React.forwardRef<HTMLButtonElement, Button
     </>
   );
 
+  // Si asChild est true, on retourne simplement le contenu sans wrapper
+  if (asChild) {
+    return <>{buttonContent}</>;
+  }
+
+  // Sinon, on retourne un bouton avec toutes les props
   return (
-    <Comp
+    <button
       className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
       disabled={isLoading || props.disabled}
       ref={ref}
       {...props}
     >
       {buttonContent}
-    </Comp>
+    </button>
   );
 });
 
 Button.displayName = 'Button';
 
 export { Button };
-
