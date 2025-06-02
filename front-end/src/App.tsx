@@ -13,6 +13,7 @@ import MatchesPage from './pages/MatchesPage';
 import VideoServicePage from './pages/VideoServicePage';
 import TranscriptionServicePage from './pages/TranscriptionServicePage';
 import NotFoundPage from './pages/NotFoundPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Composant App complet avec tous les providers et routes
 const App = () => {
@@ -43,27 +44,37 @@ const App = () => {
             } />
             <Route path="/profile" element={
               <MainLayout>
-                <ProfilePage />
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
               </MainLayout>
             } />
             <Route path="/pods" element={
               <MainLayout>
-                <PodsPage />
+                <ProtectedRoute>
+                  <PodsPage />
+                </ProtectedRoute>
               </MainLayout>
             } />
             <Route path="/matches" element={
               <MainLayout>
-                <MatchesPage />
+                <ProtectedRoute>
+                  <MatchesPage />
+                </ProtectedRoute>
               </MainLayout>
             } />
             <Route path="/video-service" element={
               <MainLayout>
-                <VideoServicePage />
+                <ProtectedRoute>
+                  <VideoServicePage />
+                </ProtectedRoute>
               </MainLayout>
             } />
             <Route path="/transcription-service" element={
               <MainLayout>
-                <TranscriptionServicePage />
+                <ProtectedRoute>
+                  <TranscriptionServicePage />
+                </ProtectedRoute>
               </MainLayout>
             } />
             <Route path="*" element={
