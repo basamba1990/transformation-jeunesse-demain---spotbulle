@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Menu, X, Sun, Moon, User, LogOut, Settings, Bell } from 'lucide-react';
 import { Button } from './ui/Button';
 import { useTheme } from '../contexts/ThemeContext';
+import logoSpotbulle from '../assets/logo_spotbulle.png';
 
 const Navbar: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -39,7 +40,7 @@ const Navbar: React.FC = () => {
           <Link to="/" className="flex-shrink-0 group">
             <div className="flex items-center">
               <img 
-                src="./assets/logo_spotbulle.png" 
+                src={logoSpotbulle} 
                 alt="SpotBulle" 
                 className="h-10 w-auto" 
               />
@@ -114,24 +115,13 @@ const Navbar: React.FC = () => {
                     </div>
                     
                     <Link 
-                      to="/profile/me" 
+                      to="/profile" 
                       className="block px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-border/50 transition-colors"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <div className="flex items-center">
                         <User size={16} className="mr-2" />
                         Mon profil
-                      </div>
-                    </Link>
-                    
-                    <Link 
-                      to="/settings" 
-                      className="block px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-border/50 transition-colors"
-                      onClick={() => setUserMenuOpen(false)}
-                    >
-                      <div className="flex items-center">
-                        <Settings size={16} className="mr-2" />
-                        Paramètres
                       </div>
                     </Link>
                     
@@ -261,24 +251,13 @@ const Navbar: React.FC = () => {
           {isAuthenticated ? (
             <div className="border-t border-neutral-200 dark:border-dark-border py-2">
               <Link 
-                to="/profile/me" 
+                to="/profile" 
                 className="block px-4 py-3 text-base font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <div className="flex items-center">
                   <User size={18} className="mr-3" />
                   Mon profil
-                </div>
-              </Link>
-              
-              <Link 
-                to="/settings" 
-                className="block px-4 py-3 text-base font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30 transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <div className="flex items-center">
-                  <Settings size={18} className="mr-3" />
-                  Paramètres
                 </div>
               </Link>
               
