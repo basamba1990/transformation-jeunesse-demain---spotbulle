@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Menu, X, Sun, Moon, User, LogOut, Settings, Bell } from 'lucide-react';
+import { Menu, X, Sun, Moon, User, LogOut, Video, FileAudio } from 'lucide-react';
 import { Button } from './ui/Button';
 import { useTheme } from '../contexts/ThemeContext';
 import logoSpotbulle from '../assets/logo_spotbulle.png';
@@ -72,6 +72,17 @@ const Navbar: React.FC = () => {
             </Link>
             
             <Link 
+              to="/matches" 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                location.pathname.startsWith('/matches') 
+                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+              }`}
+            >
+              Matchs
+            </Link>
+            
+            <Link 
               to="/resources" 
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 location.pathname.startsWith('/resources') 
@@ -80,6 +91,35 @@ const Navbar: React.FC = () => {
               }`}
             >
               Ressources
+            </Link>
+            
+            {/* Nouveaux liens pour vidéo et transcription */}
+            <Link 
+              to="/video-service" 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                location.pathname.startsWith('/video-service') 
+                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+              }`}
+            >
+              <div className="flex items-center">
+                <Video size={16} className="mr-1" />
+                Vidéo
+              </div>
+            </Link>
+            
+            <Link 
+              to="/transcription-service" 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                location.pathname.startsWith('/transcription-service') 
+                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+              }`}
+            >
+              <div className="flex items-center">
+                <FileAudio size={16} className="mr-1" />
+                Transcription
+              </div>
             </Link>
           </div>
 
@@ -236,6 +276,18 @@ const Navbar: React.FC = () => {
             </Link>
             
             <Link 
+              to="/matches" 
+              className={`block px-4 py-3 text-base font-medium transition-colors ${
+                location.pathname.startsWith('/matches') 
+                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Matchs
+            </Link>
+            
+            <Link 
               to="/resources" 
               className={`block px-4 py-3 text-base font-medium transition-colors ${
                 location.pathname.startsWith('/resources') 
@@ -245,6 +297,37 @@ const Navbar: React.FC = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               Ressources
+            </Link>
+            
+            {/* Nouveaux liens pour vidéo et transcription */}
+            <Link 
+              to="/video-service" 
+              className={`block px-4 py-3 text-base font-medium transition-colors ${
+                location.pathname.startsWith('/video-service') 
+                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <div className="flex items-center">
+                <Video size={18} className="mr-3" />
+                Service Vidéo
+              </div>
+            </Link>
+            
+            <Link 
+              to="/transcription-service" 
+              className={`block px-4 py-3 text-base font-medium transition-colors ${
+                location.pathname.startsWith('/transcription-service') 
+                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <div className="flex items-center">
+                <FileAudio size={18} className="mr-3" />
+                Service Transcription
+              </div>
             </Link>
           </div>
           
