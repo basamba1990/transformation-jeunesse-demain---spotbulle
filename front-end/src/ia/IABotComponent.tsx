@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import apiClient from '../services/api';
 
 const IABotComponent: React.FC = () => {
   const [prompt, setPrompt] = useState("");
@@ -13,13 +14,12 @@ const IABotComponent: React.FC = () => {
     setResponse("");
 
     try {
-      const apiResponse = await fetch('/api/ia/bot', {
-        method: 'POST',
+      // Utilisation de l'URL complète avec la base API configurée
+      const apiResponse = await apiClient.post('/ia/bot', { prompt }, {
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
       });
 
-      const data = await apiResponse.json();
+      const data = apiResponse.data;
 
       if (data.error) {
         setResponse(`Erreur: ${data.error}`);
