@@ -6,7 +6,7 @@ const path = require('path');
 
 // Chemins source et destination
 const FRONTEND_ASSETS_DIR = path.resolve(__dirname, '../front-end/src/assets');
-const BACKEND_STATIC_DIR = path.resolve(__dirname, '../back-end/static/media');
+const BACKEND_STATIC_DIR = path.resolve(__dirname, '../backend/static/media');
 
 // Créer le répertoire de destination s'il n'existe pas
 function ensureDirectoryExists(directory) {
