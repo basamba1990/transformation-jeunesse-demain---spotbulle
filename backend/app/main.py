@@ -4,6 +4,9 @@ from starlette.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
+from fastapi import HTTPException
 import os
 import logging
 
@@ -67,8 +70,25 @@ class LargeFileUploadMiddleware(BaseHTTPMiddleware):
             )
         return await call_next(request)
 
+# Middleware pour gérer les erreurs d'authentification
+class AuthenticationErrorMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        try:
+            response = await call_next(request)
+            return response
+        except HTTPException as e:
+            if e.status_code == 401:
+                # Log l'erreur mais retourne une réponse plus conviviale
+                logger.warning(f"Erreur d'authentification: {e.detail}")
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Authentification requise pour accéder à cette ressource"}
+                )
+            raise e
+
 # Ajout du middleware pour les fichiers volumineux avec la syntaxe corrigée
 app.add_middleware(LargeFileUploadMiddleware)
+app.add_middleware(AuthenticationErrorMiddleware)
 
 # Log des variables d'environnement importantes (sans les valeurs sensibles)
 logger.info(f"PORT environment variable: {os.getenv('PORT', '8001')}")
@@ -79,7 +99,7 @@ logger.info(f"Environment mode: {os.getenv('ENV', 'production')}")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://spotbulle-intelligent.vercel.app",
+        "https://spotbulle-intelligent.vercel.app",  # Sans le /login
         "https://spotbulle-mentor.onrender.com",
         "https://spotbulle-backend-0lax.onrender.com",
         # Ajout d'origines supplémentaires si nécessaire
@@ -94,6 +114,12 @@ app.add_middleware(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(EnhancedSecurityHeadersMiddleware)
+
+# Créer le dossier s'il n'existe pas
+os.makedirs("./static/media", exist_ok=True)
+
+# Monter le dossier static pour servir les fichiers
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
 async def root_endpoint():
