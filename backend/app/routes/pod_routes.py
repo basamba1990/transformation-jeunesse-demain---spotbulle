@@ -18,7 +18,8 @@ pod_router_limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(
     prefix="",
     tags=["Pods"],
-    dependencies=[Depends(security.get_current_active_user)],
+    # Retrait de la dépendance globale pour permettre l'accès public aux routes de lecture
+    # dependencies=[Depends(security.get_current_active_user)],
     responses={
         404: {"description": "Ressource non trouvée"},
         403: {"description": "Accès non autorisé"}
@@ -34,7 +35,8 @@ router = APIRouter(
         201: {"description": "Pod créé avec succès"},
         400: {"description": "Données invalides"},
         413: {"description": "Fichier trop volumineux"}
-    }
+    },
+    dependencies=[Depends(security.get_current_active_user)]  # Protection spécifique ajoutée ici
 )
 @pod_router_limiter.limit("10/minute")
 async def create_pod(
@@ -120,7 +122,8 @@ async def create_pod(
         200: {"description": "Transcription réussie"},
         404: {"description": "Pod non trouvé"},
         403: {"description": "Droits insuffisants"}
-    }
+    },
+    dependencies=[Depends(security.get_current_active_user)]  # Protection spécifique ajoutée ici
 )
 @pod_router_limiter.limit("5/minute")
 async def transcribe_pod(
@@ -194,7 +197,8 @@ async def get_all_pods(
     "/me",
     response_model=List[pod_schema.Pod],
     summary="Mes Pods",
-    responses={200: {"description": "Liste des Pods de l'utilisateur"}}
+    responses={200: {"description": "Liste des Pods de l'utilisateur"}},
+    dependencies=[Depends(security.get_current_active_user)]  # Protection spécifique ajoutée ici
 )
 @pod_router_limiter.limit("60/minute")
 async def get_my_pods(
@@ -260,7 +264,8 @@ async def get_pod(
         200: {"description": "Pod mis à jour"},
         404: {"description": "Pod non trouvé"},
         403: {"description": "Droits insuffisants"}
-    }
+    },
+    dependencies=[Depends(security.get_current_active_user)]  # Protection spécifique ajoutée ici
 )
 @pod_router_limiter.limit("10/minute")
 async def update_pod(
@@ -358,7 +363,8 @@ async def update_pod(
         204: {"description": "Pod supprimé"},
         404: {"description": "Pod non trouvé"},
         403: {"description": "Droits insuffisants"}
-    }
+    },
+    dependencies=[Depends(security.get_current_active_user)]  # Protection spécifique ajoutée ici
 )
 @pod_router_limiter.limit("10/minute")
 async def delete_pod(

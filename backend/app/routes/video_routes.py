@@ -20,7 +20,8 @@ video_router_limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(
     prefix="",
     tags=["Videos"],
-    dependencies=[Depends(security.get_current_active_user)],
+    # Retrait de la dépendance globale pour permettre l'accès public aux routes de lecture
+    # dependencies=[Depends(security.get_current_active_user)],
     responses={
         404: {"description": "Ressource non trouvée"},
         403: {"description": "Accès non autorisé"}
@@ -36,7 +37,8 @@ router = APIRouter(
         201: {"description": "Vidéo téléversée et Pod créé avec succès"},
         400: {"description": "Données invalides"},
         413: {"description": "Fichier trop volumineux"}
-    }
+    },
+    dependencies=[Depends(security.get_current_active_user)]  # Protection spécifique ajoutée ici
 )
 @video_router_limiter.limit("5/minute")
 async def upload_video(
