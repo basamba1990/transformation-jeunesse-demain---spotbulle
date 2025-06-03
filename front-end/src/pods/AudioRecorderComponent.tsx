@@ -1,7 +1,8 @@
 // frontend/src/pods/AudioRecorderComponent.tsx
 import React, { useState, useRef } from 'react';
+import { podService } from '../services/api';
 
-const AudioRecorderComponent: React.FC = () => {
+const AudioRecorderComponent: React.FC<{ podId?: number }> = ({ podId }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioURL, setAudioURL] = useState("");
   const [transcription, setTranscription] = useState("");
@@ -54,20 +55,36 @@ const AudioRecorderComponent: React.FC = () => {
     formData.append("audio_file", audioBlob, "recording.wav");
 
     try {
-      const response = await fetch("/api/pods/transcribe", {
-        method: "POST",
-        body: formData,
-        headers: {
-          // 'Authorization': 'Bearer VOTRE_TOKEN', // Décommentez si nécessaire
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.error) {
-        setTranscription(`Erreur: ${data.error}`);
+      // Utilisation du service API configuré au lieu d'un appel fetch direct
+      if (podId) {
+        // Si un podId est fourni, utiliser le service de transcription pour ce pod
+        const success = await podService.transcribePod(podId);
+        if (success) {
+          // Récupérer le pod mis à jour pour obtenir la transcription
+          const updatedPod = await podService.getPod(podId);
+          setTranscription(updatedPod?.transcription || "Pas de transcription disponible.");
+        } else {
+          setTranscription("Erreur lors de la transcription.");
+        }
       } else {
-        setTranscription(data.transcription || "Pas de transcription disponible.");
+        // Si pas de podId, utiliser l'API complète via le service
+        // Note: Cette partie nécessiterait un endpoint spécifique dans le service API
+        // qui n'est pas encore implémenté dans le service actuel
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/pods/transcribe`, {
+          method: "POST",
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem("spotbulle_token")}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          setTranscription(`Erreur: ${data.error}`);
+        } else {
+          setTranscription(data.transcription || "Pas de transcription disponible.");
+        }
       }
     } catch (err) {
       console.error("Erreur de transcription:", err);
@@ -110,7 +127,7 @@ const AudioRecorderComponent: React.FC = () => {
         )}
       </div>
       <p className="text-xs text-gray-600 text-center">
-        Note : Assurez-vous que le backend est bien connecté à l'endpoint <code>/api/pods/transcribe</code>.
+        Note : Le composant utilise maintenant le service API configuré pour la transcription.
       </p>
     </div>
   );
