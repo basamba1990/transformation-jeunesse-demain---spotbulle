@@ -1,116 +1,107 @@
-import React, { ReactNode, createContext, useState, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { authService, IUser } from '../services/api';
 
 interface AuthContextType {
+  user: IUser | null;
   isAuthenticated: boolean;
-  user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  register: (email: string, password: string, name: string) => Promise<boolean>;
+  refreshUser: () => Promise<void>;
 }
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const defaultAuthContext: AuthContextType = {
-  isAuthenticated: false,
-  user: null,
-  login: async () => false,
-  logout: () => {},
-  register: async () => false,
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth doit être utilisé à l\'intérieur d\'un AuthProvider');
+  }
+  return context;
 };
-
-export const AuthContext = createContext<AuthContextType>(defaultAuthContext);
-
-export const useAuth = () => useContext(AuthContext);
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [user, setUser] = useState<IUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Vérifier si l'utilisateur est déjà connecté au chargement
-  React.useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Erreur lors de la récupération des données utilisateur:', error);
-        localStorage.removeItem('user');
-      }
-    }
-  }, []);
-
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const refreshUser = async () => {
     try {
-      // Simulation d'une requête API
-      // Dans une implémentation réelle, vous feriez un appel à votre API d'authentification
-      console.log('Tentative de connexion avec:', email);
-      
-      // Simulation d'un délai réseau
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simulation d'une réponse réussie
-      const mockUser: User = {
-        id: '123456',
-        name: 'Utilisateur Test',
-        email: email
-      };
-      
-      setUser(mockUser);
+      const userData = await authService.getCurrentUser();
+      setUser(userData);
       setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      
-      return true;
+      return userData;
     } catch (error) {
-      console.error('Erreur de connexion:', error);
-      return false;
+      console.error("Erreur lors de la récupération du profil:", error);
+      setUser(null);
+      setIsAuthenticated(false);
+      throw error;
+    }
+  };
+
+  const login = async (email: string, password: string) => {
+    try {
+      await authService.loginUser({ email, password });
+      await refreshUser();
+    } catch (error) {
+      console.error("Erreur de connexion:", error);
+      throw error;
     }
   };
 
   const logout = () => {
+    authService.logout();
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('user');
   };
 
-  const register = async (email: string, password: string, name: string): Promise<boolean> => {
-    try {
-      // Simulation d'une requête API
-      console.log('Tentative d\'inscription avec:', email, name);
+  useEffect(() => {
+    const initAuth = async () => {
+      setIsLoading(true);
+      const token = localStorage.getItem('spotbulle_token');
       
-      // Simulation d'un délai réseau
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
       
-      // Simulation d'une réponse réussie
-      const mockUser: User = {
-        id: '123456',
-        name: name,
-        email: email
-      };
-      
-      setUser(mockUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      
-      return true;
-    } catch (error) {
-      console.error('Erreur d\'inscription:', error);
-      return false;
-    }
+      try {
+        await refreshUser();
+      } catch (error) {
+        // Tentative de rafraîchissement du token
+        try {
+          await authService.refreshToken();
+          await refreshUser();
+        } catch (refreshError) {
+          console.error("Session expirée:", refreshError);
+          logout();
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+  }, []);
+
+  const value = {
+    user,
+    isAuthenticated,
+    isLoading,
+    login,
+    logout,
+    refreshUser
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, register }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
+
+export default AuthProvider;
