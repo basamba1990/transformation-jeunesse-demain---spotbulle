@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { Menu, X, Sun, Moon, User, LogOut, Video, FileAudio } from 'lucide-react';
 import { Button } from './ui/Button';
 import { useTheme } from '../contexts/ThemeContext';
-import logoSpotbulle from '../assets/logo_spotbulle.png';
 
 const Navbar: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -40,7 +39,7 @@ const Navbar: React.FC = () => {
           <Link to="/" className="flex-shrink-0 group">
             <div className="flex items-center">
               <img 
-                src={logoSpotbulle} 
+                src="/assets/logo_spotbulle.png" 
                 alt="SpotBulle" 
                 className="h-10 w-auto" 
               />
@@ -50,56 +49,44 @@ const Navbar: React.FC = () => {
           {/* Navigation - Desktop */}
           <div className="hidden md:flex items-center space-x-4">
             <Link 
+              to="/" 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                location.pathname === '/' 
+                  ? 'text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              Accueil
+            </Link>
+            
+            <Link 
               to="/pods" 
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 location.pathname.startsWith('/pods') 
-                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
-                  : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+                  ? 'text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
               Pods
             </Link>
             
             <Link 
-              to="/profiles" 
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                location.pathname.startsWith('/profiles') 
-                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
-                  : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
-              }`}
-            >
-              Profils
-            </Link>
-            
-            <Link 
-              to="/matches" 
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                location.pathname.startsWith('/matches') 
-                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
-                  : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
-              }`}
-            >
-              Matchs
-            </Link>
-            
-            <Link 
               to="/resources" 
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 location.pathname.startsWith('/resources') 
-                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
-                  : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+                  ? 'text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
               Ressources
             </Link>
             
-            {/* Nouveaux liens pour vidéo et transcription */}
             <Link 
               to="/video-service" 
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 location.pathname.startsWith('/video-service') 
-                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
-                  : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+                  ? 'text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
               <div className="flex items-center">
@@ -112,8 +99,8 @@ const Navbar: React.FC = () => {
               to="/transcription-service" 
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 location.pathname.startsWith('/transcription-service') 
-                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
-                  : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-500 dark:hover:text-primary-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+                  ? 'text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
               <div className="flex items-center">
@@ -252,11 +239,23 @@ const Navbar: React.FC = () => {
           
           <div className="py-2">
             <Link 
+              to="/" 
+              className={`block px-4 py-3 text-base font-medium transition-colors ${
+                location.pathname === '/' 
+                  ? 'text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Accueil
+            </Link>
+            
+            <Link 
               to="/pods" 
               className={`block px-4 py-3 text-base font-medium transition-colors ${
                 location.pathname.startsWith('/pods') 
-                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
-                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+                  ? 'text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -264,48 +263,23 @@ const Navbar: React.FC = () => {
             </Link>
             
             <Link 
-              to="/profiles" 
-              className={`block px-4 py-3 text-base font-medium transition-colors ${
-                location.pathname.startsWith('/profiles') 
-                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
-                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Profils
-            </Link>
-            
-            <Link 
-              to="/matches" 
-              className={`block px-4 py-3 text-base font-medium transition-colors ${
-                location.pathname.startsWith('/matches') 
-                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
-                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Matchs
-            </Link>
-            
-            <Link 
               to="/resources" 
               className={`block px-4 py-3 text-base font-medium transition-colors ${
                 location.pathname.startsWith('/resources') 
-                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
-                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+                  ? 'text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
               Ressources
             </Link>
             
-            {/* Nouveaux liens pour vidéo et transcription */}
             <Link 
               to="/video-service" 
               className={`block px-4 py-3 text-base font-medium transition-colors ${
                 location.pathname.startsWith('/video-service') 
-                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
-                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+                  ? 'text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -319,8 +293,8 @@ const Navbar: React.FC = () => {
               to="/transcription-service" 
               className={`block px-4 py-3 text-base font-medium transition-colors ${
                 location.pathname.startsWith('/transcription-service') 
-                  ? 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20' 
-                  : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-border/30'
+                  ? 'text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
