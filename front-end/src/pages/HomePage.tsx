@@ -22,10 +22,6 @@ const HomePage: React.FC = () => {
             vos valeurs et vos intérêts.
           </p>
           
-          <div className="text-sm text-amber-500 mt-2">
-            Audio temporairement indisponible
-          </div>
-          
           <button className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md transition duration-300 ease-in-out transform hover:scale-105">
             En savoir plus
           </button>

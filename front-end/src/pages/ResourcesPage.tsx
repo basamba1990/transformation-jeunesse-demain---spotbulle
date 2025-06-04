@@ -19,7 +19,7 @@ const ResourcesPage: React.FC = () => {
         <AudioResourceCard 
           title="Développement Personnel" 
           description="Techniques et conseils pour votre développement personnel." 
-          audioSrc="/assets/audio/samples_jfk.mp3" 
+          audioSrc="/assets/audio/EconomicModel.wav" 
         />
         
         <AudioResourceCard 
@@ -31,7 +31,7 @@ const ResourcesPage: React.FC = () => {
         <AudioResourceCard 
           title="Motivation Quotidienne" 
           description="Boostez votre motivation avec ces conseils pratiques." 
-          audioSrc="/assets/audio/samples_jfk.mp3" 
+          audioSrc="/assets/audio/EconomicModel.wav" 
         />
       </div>
     </div>
