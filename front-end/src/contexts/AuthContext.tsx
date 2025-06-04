@@ -6,8 +6,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => => void;
   refreshUser: () => Promise<void>;
+  register: (email: string, password: string, fullName: string) => Promise<boolean>; // Ajout de la fonction register
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -59,6 +60,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsAuthenticated(false);
   };
 
+  // Ajout de la fonction register
+  const register = async (email: string, password: string, fullName: string) => {
+    try {
+      await authService.registerUser({ email, password, fullName });
+      return true;
+    } catch (error) {
+      console.error("Erreur lors de l'inscription:", error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const initAuth = async () => {
       setIsLoading(true);
@@ -72,36 +84,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         await refreshUser();
       } catch (error) {
-        // Tentative de rafraîchissement du token
-        try {
-          await authService.refreshToken();
-          await refreshUser();
-        } catch (refreshError) {
-          console.error("Session expirée:", refreshError);
-          logout();
-        }
+        console.error("Erreur d'initialisation de l'authentification:", error);
       } finally {
         setIsLoading(false);
       }
     };
-
+    
     initAuth();
   }, []);
 
-  const value = {
-    user,
-    isAuthenticated,
-    isLoading,
-    login,
-    logout,
-    refreshUser
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated, 
+      isLoading, 
+      login, 
+      logout, 
+      refreshUser,
+      register // Exposition de la fonction register
+    }}>
       {children}
     </AuthContext.Provider>
   );
 };
-
-export default AuthProvider;
