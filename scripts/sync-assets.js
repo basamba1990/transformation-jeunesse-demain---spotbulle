@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Chemins source et destination
-const FRONTEND_ASSETS_DIR = path.resolve(__dirname, '../front-end/src/assets');
+const FRONTEND_ASSETS_DIR = path.resolve(__dirname, '../front-end/public/assets');
 const BACKEND_STATIC_DIR = path.resolve(__dirname, '../backend/static/media');
 
 // Créer le répertoire de destination s'il n'existe pas
@@ -35,27 +35,38 @@ function syncAssets() {
   // S'assurer que le répertoire de destination existe
   ensureDirectoryExists(BACKEND_STATIC_DIR);
   
-  // Lire tous les fichiers du répertoire source
-  const files = fs.readdirSync(FRONTEND_ASSETS_DIR);
+  // Fonction récursive pour copier les fichiers et dossiers
+  function copyRecursive(sourceDir, destDir) {
+    const items = fs.readdirSync(sourceDir);
+    
+    for (const item of items) {
+      const sourcePath = path.join(sourceDir, item);
+      const destPath = path.join(destDir, item);
+      
+      const stat = fs.statSync(sourcePath);
+      
+      if (stat.isDirectory()) {
+        // Créer le dossier de destination s'il n'existe pas
+        ensureDirectoryExists(destPath);
+        // Copier récursivement le contenu du dossier
+        copyRecursive(sourcePath, destPath);
+      } else {
+        // Copier le fichier
+        const success = copyFile(sourcePath, destPath);
+        if (success) {
+          successCount++;
+        } else {
+          errorCount++;
+        }
+      }
+    }
+  }
   
   let successCount = 0;
   let errorCount = 0;
   
-  // Copier chaque fichier
-  for (const file of files) {
-    const sourcePath = path.join(FRONTEND_ASSETS_DIR, file);
-    const destPath = path.join(BACKEND_STATIC_DIR, file);
-    
-    // Vérifier si c'est un fichier (pas un répertoire)
-    if (fs.statSync(sourcePath).isFile()) {
-      const success = copyFile(sourcePath, destPath);
-      if (success) {
-        successCount++;
-      } else {
-        errorCount++;
-      }
-    }
-  }
+  // Copier tous les assets récursivement
+  copyRecursive(FRONTEND_ASSETS_DIR, BACKEND_STATIC_DIR);
   
   console.log(`Synchronisation terminée: ${successCount} fichiers copiés, ${errorCount} erreurs`);
 }
