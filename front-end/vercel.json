@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/static/media/:path*",
-      "destination": "https://spotbulle-backend-0lax.onrender.com/static/media/:path*"
-    }
-  ]
-}
