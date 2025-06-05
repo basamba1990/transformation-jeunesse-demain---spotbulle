@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node ../scripts/sync-assets.js",
-    "postbuild": "cp -r public/* dist/",
+    "build": "vite build",
+    "postbuild": "cp -r public/* dist/ 2>/dev/null || true",
     "preview": "vite preview --port 4173"
   },
   "engines": {
@@ -30,6 +30,13 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "typescript": "^5.4.5",
     "vite": "^5.2.8",
-  "terser": "^5.26.0"
+    "terser": "^5.26.0",
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "@tailwindcss/forms": "^0.5.7",
+    "@tailwindcss/typography": "^0.5.10",
+    "@tailwindcss/line-clamp": "^0.4.4"
   }
 }
+
