@@ -6,9 +6,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => => void;
+  logout: () => void; // Correction de la syntaxe ici
   refreshUser: () => Promise<void>;
-  register: (email: string, password: string, fullName: string) => Promise<boolean>; // Ajout de la fonction register
+  register: (email: string, password: string, fullName: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsAuthenticated(false);
   };
 
-  // Ajout de la fonction register
+  // Fonction register
   const register = async (email: string, password: string, fullName: string) => {
     try {
       await authService.registerUser({ email, password, fullName });
@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       login, 
       logout, 
       refreshUser,
-      register // Exposition de la fonction register
+      register
     }}>
       {children}
     </AuthContext.Provider>
