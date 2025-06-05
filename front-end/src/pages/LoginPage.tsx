@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { authService } from "../services/api";
 import { LogIn as LoginIcon, Mail, Lock } from 'lucide-react';
 
-// Composant Button local (remplace l'import @components/ui/Button)
+// Composants UI locaux (remplacent les imports @components/ui/*)
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline';
   size?: 'sm' | 'md' | 'lg';
@@ -42,12 +41,11 @@ const Button: React.FC<ButtonProps> = ({
   );
 };
 
-// Composants Card locaux (remplacent l'import @components/ui/Card)
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ 
   children, 
   className = '' 
 }) => (
-  <div className={`bg-white rounded-lg border border-gray-200 ${className}`}>
+  <div className={`bg-white rounded-lg border border-gray-200 shadow-lg ${className}`}>
     {children}
   </div>
 );
@@ -99,36 +97,24 @@ const CardFooter: React.FC<{ children: React.ReactNode; className?: string }> = 
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
-  label?: string;
   id: string;
 }
 
-const Input: React.FC<InputProps> = ({ className = '', type, icon, label, id, ...props }) => {
-  return (
-    <div className="space-y-1">
-      {label && (
-        <label htmlFor={id} className="block text-sm font-medium text-neutral-700">
-          {label}
-        </label>
-      )}
-      <div className="relative">
-        {icon && (
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            {React.cloneElement(icon as React.ReactElement, {
-              className: "h-5 w-5 text-neutral-400"
-            })}
-          </div>
-        )}
-        <input
-          id={id}
-          type={type}
-          className={`block w-full ${icon ? 'pl-10' : 'pl-3'} pr-3 py-2 border border-neutral-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${className}`}
-          {...props}
-        />
-      </div>
+const Input: React.FC<InputProps> = ({ className = '', type, icon, id, ...props }) => (
+  <div className="relative">
+    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      {React.cloneElement(icon as React.ReactElement, { 
+        className: "h-5 w-5 text-neutral-400" 
+      })}
     </div>
-  );
-};
+    <input
+      id={id}
+      type={type}
+      className={`block w-full ${icon ? 'pl-10' : 'pl-3'} pr-3 py-2 border border-neutral-300 rounded-lg shadow text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${className}`}
+      {...props}
+    />
+  </div>
+);
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -144,104 +130,90 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Utiliser directement la fonction login du contexte d'authentification
       const success = await login(email, password);
       if (success) {
-        console.log("Connexion réussie");
-        navigate("/profile");
+        navigate("/");
       } else {
-        setError("Identifiants incorrects. Veuillez réessayer.");
+        setError("Identifiants incorrects ou problème de connexion");
       }
     } catch (err: any) {
-      console.error("Erreur de connexion :", err);
-      setError(
-        err.message || "Une erreur est survenue lors de la connexion. Veuillez réessayer."
-      );
+      setError(err.message || "Une erreur est survenue lors de la connexion. Veuillez réessayer.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-blue-600 mb-2">
-            Spotbulle
-          </h1>
-          <p className="text-neutral-600">La plateforme de mentorat audio innovante</p>
-        </div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+      <Link to="/" className="mb-8">
+        <h1 className="text-4xl font-bold text-blue-600 hover:text-blue-700 transition-colors">
+          Spotbulle
+        </h1>
+      </Link>
 
-        <Card className="w-full shadow-lg">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Connexion</CardTitle>
-            <CardDescription className="text-center">
-              Accédez à votre espace personnel
-            </CardDescription>
-          </CardHeader>
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Connexion</CardTitle>
+          <CardDescription>Accédez à votre espace personnel</CardDescription>
+        </CardHeader>
 
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
+        <CardContent>
+          {error && (
+            <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4">{error}</div>
+          )}
 
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Adresse email
+              </label>
               <Input
                 id="email"
                 type="email"
-                label="Adresse email"
-                placeholder="exemple@spotbulle.com"
+                icon={<Mail size={20} />}
+                placeholder="basamba1990@spotbulle.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                icon={<Mail />}
               />
+            </div>
 
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Mot de passe
+              </label>
               <Input
                 id="password"
                 type="password"
-                label="Mot de passe"
+                icon={<Lock size={20} />}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                icon={<Lock />}
               />
+            </div>
 
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <span className="animate-pulse">Connexion en cours...</span>
-                ) : (
-                  <>
-                    <LoginIcon className="mr-2 h-5 w-5" />
-                    Se connecter
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+              variant="primary"
+            >
+              <LoginIcon size={20} className="mr-2" />
+              Se connecter
+            </Button>
+          </form>
+        </CardContent>
 
-          <CardFooter className="flex justify-center pt-4 border-t border-neutral-100">
-            <p className="text-sm text-neutral-600">
-              Nouveau sur Spotbulle ?{" "}
-              <Link
-                to="/register"
-                className="font-medium text-blue-600 hover:underline"
-              >
-                Créer un compte
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
-      </div>
+        <CardFooter className="flex justify-center">
+          <p className="text-sm text-gray-600">
+            Nouveau sur Spotbulle?{" "}
+            <Link to="/register" className="text-blue-600 hover:underline">
+              Créer un compte
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 };
