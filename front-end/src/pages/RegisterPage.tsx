@@ -2,15 +2,98 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { UserIcon, Mail, Lock, UserPlus } from 'lucide-react';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@components/ui/Card";
-import { Button } from "@components/ui/Button";
+
+// Composants UI locaux (remplacent les imports @components/ui/*)
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
+  children: React.ReactNode;
+}
+
+const Button: React.FC<ButtonProps> = ({ 
+  variant = 'primary', 
+  size = 'md', 
+  className = '', 
+  children, 
+  ...props 
+}) => {
+  const baseClasses = "inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+  
+  const variantClasses = {
+    primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
+    secondary: "bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500",
+    outline: "border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-blue-500"
+  };
+  
+  const sizeClasses = {
+    sm: "px-3 py-1.5 text-sm",
+    md: "px-4 py-2 text-sm",
+    lg: "px-6 py-3 text-base"
+  };
+  
+  return (
+    <button
+      className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
+const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ 
+  children, 
+  className = '' 
+}) => (
+  <div className={`bg-white rounded-lg border border-gray-200 shadow-lg ${className}`}>
+    {children}
+  </div>
+);
+
+const CardHeader: React.FC<{ children: React.ReactNode; className?: string }> = ({ 
+  children, 
+  className = '' 
+}) => (
+  <div className={`px-6 py-4 ${className}`}>
+    {children}
+  </div>
+);
+
+const CardTitle: React.FC<{ children: React.ReactNode; className?: string }> = ({ 
+  children, 
+  className = '' 
+}) => (
+  <h3 className={`text-lg font-semibold leading-6 text-gray-900 ${className}`}>
+    {children}
+  </h3>
+);
+
+const CardDescription: React.FC<{ children: React.ReactNode; className?: string }> = ({ 
+  children, 
+  className = '' 
+}) => (
+  <p className={`mt-1 text-sm text-gray-600 ${className}`}>
+    {children}
+  </p>
+);
+
+const CardContent: React.FC<{ children: React.ReactNode; className?: string }> = ({ 
+  children, 
+  className = '' 
+}) => (
+  <div className={`px-6 py-4 ${className}`}>
+    {children}
+  </div>
+);
+
+const CardFooter: React.FC<{ children: React.ReactNode; className?: string }> = ({ 
+  children, 
+  className = '' 
+}) => (
+  <div className={`px-6 py-4 ${className}`}>
+    {children}
+  </div>
+);
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
@@ -19,13 +102,15 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 const Input: React.FC<InputProps> = ({ className = '', type, icon, id, ...props }) => (
   <div className="relative">
-    <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none`}>
-      {React.cloneElement(icon as React.ReactElement, { className: "h-5 w-5 text-neutral-400" })}
+    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      {React.cloneElement(icon as React.ReactElement, { 
+        className: "h-5 w-5 text-neutral-400" 
+      })}
     </div>
     <input
       id={id}
       type={type}
-      className={`block w-full ${icon ? 'pl-10' : 'pl-3'} pr-3 py-2 border border-neutral-300 rounded-lg shadow text-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
+      className={`block w-full ${icon ? 'pl-10' : 'pl-3'} pr-3 py-2 border border-neutral-300 rounded-lg shadow text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${className}`}
       {...props}
     />
   </div>
@@ -57,7 +142,6 @@ const RegisterPage: React.FC = () => {
     try {
       // Utiliser directement la fonction register du contexte d'authentification
       const success = await register(email, password, fullName);
-      
       if (success) {
         setSuccessMessage("Inscription réussie ! Vous allez être redirigé vers la page de connexion.");
         setTimeout(() => navigate("/login"), 3000);
@@ -72,9 +156,11 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-lightest p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <Link to="/" className="mb-8">
-        <h1 className="text-4xl font-bold text-primary hover:text-primary-dark transition-colors">Spotbulle</h1>
+        <h1 className="text-4xl font-bold text-blue-600 hover:text-blue-700 transition-colors">
+          Spotbulle
+        </h1>
       </Link>
 
       <Card className="w-full max-w-md">
@@ -84,16 +170,22 @@ const RegisterPage: React.FC = () => {
         </CardHeader>
 
         <CardContent>
-          {error && <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4">{error}</div>}
-          {successMessage && <div className="bg-green-100 text-green-700 p-3 rounded-md mb-4">{successMessage}</div>}
+          {error && (
+            <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4">{error}</div>
+          )}
+          {successMessage && (
+            <div className="bg-green-100 text-green-700 p-3 rounded-md mb-4">{successMessage}</div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-neutral-darker">Nom complet</label>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
+                Nom complet
+              </label>
               <Input
                 id="fullName"
                 type="text"
-                icon={<UserIcon size={20}/>}
+                icon={<UserIcon size={20} />}
                 placeholder="Votre nom complet"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -102,11 +194,13 @@ const RegisterPage: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-neutral-darker">Adresse email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Adresse email
+              </label>
               <Input
                 id="email"
                 type="email"
-                icon={<Mail size={20}/>}
+                icon={<Mail size={20} />}
                 placeholder="exemple@spotbulle.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -115,11 +209,13 @@ const RegisterPage: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-neutral-darker">Mot de passe</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Mot de passe
+              </label>
               <Input
                 id="password"
                 type="password"
-                icon={<Lock size={20}/>}
+                icon={<Lock size={20} />}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -128,11 +224,13 @@ const RegisterPage: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-darker">Confirmer le mot de passe</label>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                Confirmer le mot de passe
+              </label>
               <Input
                 id="confirmPassword"
                 type="password"
-                icon={<Lock size={20}/>}
+                icon={<Lock size={20} />}
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -153,8 +251,11 @@ const RegisterPage: React.FC = () => {
         </CardContent>
 
         <CardFooter className="flex justify-center">
-          <p className="text-sm text-neutral-dark">
-            Déjà un compte? <Link to="/login" className="text-primary hover:underline">Connectez-vous ici</Link>
+          <p className="text-sm text-gray-600">
+            Déjà un compte?{" "}
+            <Link to="/login" className="text-blue-600 hover:underline">
+              Connectez-vous ici
+            </Link>
           </p>
         </CardFooter>
       </Card>
@@ -163,3 +264,4 @@ const RegisterPage: React.FC = () => {
 };
 
 export default RegisterPage;
+
