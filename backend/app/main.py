@@ -100,7 +100,7 @@ logger.info(f"Environment mode: {os.getenv('ENV', 'production')}")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://spotbulle-intelligent.vercel.app",  # Frontend principal
+        "https://spotbulle-intelligent-mj3wbjhbi-basamba1990s-projects.vercel.app",  # Frontend principal
         "https://spotbulle-mentor.onrender.com",     # Autre domaine si nécessaire
         "https://spotbulle-backend-0lax.onrender.com",  # Backend pour les tests
         "http://localhost:3000",                     # Développement local React
