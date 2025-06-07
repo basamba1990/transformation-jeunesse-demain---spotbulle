@@ -9,12 +9,9 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import PodsPage from './pages/PodsPage';
-import PodsPageDemo from './pages/PodsPageDemo';
 import MatchesPage from './pages/MatchesPage';
 import VideoServicePage from './pages/VideoServicePage';
-import VideoServicePageDemo from './pages/VideoServicePageDemo';
 import TranscriptionServicePage from './pages/TranscriptionServicePage';
-import TranscriptionServicePageDemo from './pages/TranscriptionServicePageDemo';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -52,24 +49,8 @@ const App = () => {
                 </ProtectedRoute>
               </MainLayout>
             } />
-            {/* Pages démo accessibles sans authentification */}
+            {/* Routes principales avec authentification requise */}
             <Route path="/pods" element={
-              <MainLayout>
-                <PodsPageDemo />
-              </MainLayout>
-            } />
-            <Route path="/video-service" element={
-              <MainLayout>
-                <VideoServicePageDemo />
-              </MainLayout>
-            } />
-            <Route path="/transcription-service" element={
-              <MainLayout>
-                <TranscriptionServicePageDemo />
-              </MainLayout>
-            } />
-            {/* Pages protégées originales (pour les utilisateurs connectés) */}
-            <Route path="/pods/authenticated" element={
               <MainLayout>
                 <ProtectedRoute>
                   <PodsPage />
@@ -83,14 +64,14 @@ const App = () => {
                 </ProtectedRoute>
               </MainLayout>
             } />
-            <Route path="/video-service/authenticated" element={
+            <Route path="/video-service" element={
               <MainLayout>
                 <ProtectedRoute>
                   <VideoServicePage />
                 </ProtectedRoute>
               </MainLayout>
             } />
-            <Route path="/transcription-service/authenticated" element={
+            <Route path="/transcription-service" element={
               <MainLayout>
                 <ProtectedRoute>
                   <TranscriptionServicePage />
@@ -110,3 +91,4 @@ const App = () => {
 };
 
 export default App;
+
