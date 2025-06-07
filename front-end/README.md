@@ -1,54 +1,137 @@
-# React + TypeScript + Vite
+# SpotBulle - Corrections et améliorations
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ce dépôt contient les corrections et améliorations apportées au site SpotBulle pour résoudre les problèmes identifiés avec le profil, les pods, les matches, les transcriptions et les vidéos.
 
-Currently, two official plugins are available:
+## Problèmes résolus
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+1. **Page de profil** : Correction des problèmes d'affichage et amélioration de la gestion des erreurs
+2. **Pods** : Unification des routes et amélioration de la gestion des erreurs
+3. **Matches** : Implémentation d'un vrai service qui appelle l'API
+4. **Transcriptions** : Amélioration de l'interface et de la gestion des erreurs
+5. **Vidéos** : Amélioration de l'interface et de la gestion des erreurs
+6. **Authentification** : Amélioration de la gestion des tokens et du mode démo
+7. **Expérience utilisateur** : Ajout d'un indicateur de mode démo et amélioration des messages d'erreur
 
-## Expanding the ESLint configuration
+## Structure des fichiers
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```
+spotbulle_fixed/
+├── .env                      # Variables d'environnement
+├── src/
+│   ├── components/           # Composants réutilisables
+│   │   ├── Alert.tsx         # Composant pour les messages d'erreur
+│   │   └── MainLayout.tsx    # Layout principal avec indicateur de mode démo
+│   ├── contexts/
+│   │   └── AuthContext.tsx   # Contexte d'authentification amélioré
+│   ├── pages/                # Pages de l'application
+│   │   ├── ProfilePage.tsx   # Page de profil corrigée
+│   │   ├── PodsPage.tsx      # Page des pods corrigée
+│   │   ├── MatchesPage.tsx   # Page des matches corrigée
+│   │   ├── TranscriptionServicePage.tsx  # Service de transcription corrigé
+│   │   └── VideoServicePage.tsx          # Service vidéo corrigé
+│   ├── services/
+│   │   └── api.ts            # Services API améliorés
+│   ├── utils/
+│   │   ├── auth.ts           # Utilitaires pour l'authentification
+│   │   └── debug.ts          # Utilitaires pour le débogage
+│   └── App.tsx               # Configuration des routes unifiées
+└── README.md                 # Ce fichier
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Instructions d'installation
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Prérequis
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+- Node.js 16.x ou supérieur
+- npm 8.x ou supérieur
+
+### Installation
+
+1. Clonez le dépôt original de SpotBulle :
+
+```bash
+git clone https://github.com/votre-organisation/spotbulle.git
+cd spotbulle
 ```
+
+2. Remplacez les fichiers par ceux de ce dépôt :
+
+```bash
+# Créez un répertoire de sauvegarde pour les fichiers originaux
+mkdir -p backup/src/{components,contexts,pages,services,utils}
+
+# Sauvegardez les fichiers originaux
+cp .env backup/ 2>/dev/null || true
+cp src/App.tsx backup/src/ 2>/dev/null || true
+cp src/components/Alert.tsx backup/src/components/ 2>/dev/null || true
+cp src/components/MainLayout.tsx backup/src/components/ 2>/dev/null || true
+cp src/contexts/AuthContext.tsx backup/src/contexts/ 2>/dev/null || true
+cp src/pages/ProfilePage.tsx backup/src/pages/ 2>/dev/null || true
+cp src/pages/PodsPage.tsx backup/src/pages/ 2>/dev/null || true
+cp src/pages/MatchesPage.tsx backup/src/pages/ 2>/dev/null || true
+cp src/pages/TranscriptionServicePage.tsx backup/src/pages/ 2>/dev/null || true
+cp src/pages/VideoServicePage.tsx backup/src/pages/ 2>/dev/null || true
+cp src/services/api.ts backup/src/services/ 2>/dev/null || true
+
+# Copiez les nouveaux fichiers
+cp -r /chemin/vers/spotbulle_fixed/* .
+```
+
+3. Installez les dépendances :
+
+```bash
+npm install
+```
+
+4. Configurez les variables d'environnement :
+
+Vérifiez le fichier `.env` et ajustez les variables selon votre environnement :
+
+```
+VITE_API_BASE_URL=https://votre-backend.com/api/v1
+VITE_DEBUG_MODE=false
+```
+
+5. Lancez l'application en mode développement :
+
+```bash
+npm run dev
+```
+
+## Mode démo vs Mode authentifié
+
+L'application dispose désormais d'un indicateur clair pour distinguer le mode démo du mode authentifié :
+
+- En mode démo, une bannière jaune s'affiche en haut de l'écran
+- Les données affichées en mode démo sont clairement identifiées comme fictives
+- L'authentification est gérée de manière plus robuste
+
+## Gestion des erreurs
+
+La gestion des erreurs a été améliorée :
+
+- Affichage de messages d'erreur clairs et contextuels
+- Possibilité de réessayer les actions qui ont échoué
+- Logs détaillés en mode débogage
+
+## Mode débogage
+
+Un mode débogage a été ajouté pour faciliter le développement :
+
+1. Activez-le en définissant `VITE_DEBUG_MODE=true` dans le fichier `.env`
+2. Une bannière violette s'affiche en haut de l'écran
+3. Des logs détaillés sont affichés dans la console du navigateur
+
+## Contribution
+
+Pour contribuer à ce projet :
+
+1. Créez une branche pour votre fonctionnalité (`git checkout -b feature/ma-fonctionnalite`)
+2. Committez vos changements (`git commit -m 'Ajout de ma fonctionnalité'`)
+3. Poussez vers la branche (`git push origin feature/ma-fonctionnalite`)
+4. Ouvrez une Pull Request
+
+## Licence
+
+Ce projet est sous licence [MIT](LICENSE).
+
