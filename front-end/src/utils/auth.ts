@@ -27,11 +27,11 @@ export function isTokenValid(token: string | null): boolean {
 
 /**
  * Vérifie si l'application est en mode démo
- * @returns true si l'application est en mode démo, false sinon
+ * @returns false - Le mode démo est désactivé
  */
 export function isInDemoMode(): boolean {
-  const token = localStorage.getItem("spotbulle_token");
-  return token?.startsWith("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9") || false;
+  // Mode démo désactivé - retourne toujours false
+  return false;
 }
 
 /**
