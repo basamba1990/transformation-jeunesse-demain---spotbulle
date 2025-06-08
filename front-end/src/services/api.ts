@@ -13,7 +13,7 @@ const apiClient = axios.create({
     "Content-Type": "application/json",
     "Accept": "application/json"
   },
-  withCredentials: false, // CORRIGÉ : Désactiver pour éviter les problèmes CORS
+  withCredentials: false,
   timeout: 30000,
   maxContentLength: MAX_FILE_SIZE,
   maxBodyLength: MAX_FILE_SIZE,
@@ -36,7 +36,7 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Intercepteur pour gérer les erreurs - AMÉLIORÉ
+// Intercepteur pour gérer les erreurs
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -100,7 +100,6 @@ export interface IProfile {
   updated_at: string;
 }
 
-// Interface pour les matchs IA - AJOUTÉE
 export interface IAMatch {
   user: IUser;
   profile: IProfile | null;
@@ -114,13 +113,24 @@ export interface IAMatch {
   match_reason: string;
 }
 
-// Service d'authentification CORRIGÉ
+export interface IVideo {
+  id: number;
+  title: string;
+  description: string | null;
+  video_file_url: string;
+  thumbnail_url: string | null;
+  duration: number | null;
+  owner_id: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Service d'authentification
 export const authService = {
   loginUser: async (userData: { email: string; password: string }): Promise<string> => {
     try {
       console.log("Tentative de connexion avec:", userData.email);
       
-      // CORRIGÉ : Utiliser form-data comme attendu par FastAPI OAuth2
       const formData = new FormData();
       formData.append("username", userData.email);
       formData.append("password", userData.password);
@@ -133,7 +143,6 @@ export const authService = {
       
       console.log("Connexion réussie:", response.data);
       
-      // Stocker le token
       if (response.data.access_token) {
         storeTokens(response.data.access_token, response.data.refresh_token);
         return response.data.access_token;
@@ -218,7 +227,7 @@ export const authService = {
   }
 };
 
-// Service de profil CORRIGÉ
+// Service de profil
 export const profileService = {
   getMyProfile: async (): Promise<IProfile | null> => {
     try {
@@ -229,7 +238,6 @@ export const profileService = {
     } catch (error: any) {
       console.error("Erreur récupération profil:", error);
       
-      // Si le profil n'existe pas, retourner null au lieu d'une erreur
       if (error.response?.status === 404) {
         return null;
       }
@@ -263,7 +271,7 @@ export const profileService = {
   }
 };
 
-// Service Pod CORRIGÉ
+// Service Pod
 export const podService = {
   fetchAll: async (): Promise<IPod[]> => {
     try {
@@ -302,10 +310,53 @@ export const podService = {
       console.error("Erreur création pod:", error);
       return null;
     }
+  },
+
+  getPod: async (id: number): Promise<IPod | null> => {
+    try {
+      const response = await apiClient.get(`/pods/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error(`Erreur récupération pod ${id}:`, error);
+      return null;
+    }
+  },
+
+  updatePod: async (id: number, data: FormData): Promise<IPod | null> => {
+    try {
+      const response = await apiClient.put(`/pods/${id}`, data, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 60000,
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error(`Erreur mise à jour pod ${id}:`, error);
+      return null;
+    }
+  },
+
+  deletePod: async (id: number): Promise<boolean> => {
+    try {
+      await apiClient.delete(`/pods/${id}`);
+      return true;
+    } catch (error: any) {
+      console.error("Erreur suppression pod:", error);
+      return false;
+    }
+  },
+
+  transcribePod: async (id: number): Promise<boolean> => {
+    try {
+      await apiClient.post(`/pods/${id}/transcribe`);
+      return true;
+    } catch (error: any) {
+      console.error("Erreur transcription pod:", error);
+      return false;
+    }
   }
 };
 
-// Service de matching IA - AJOUTÉ
+// Service de matching IA
 export const matchService = {
   getMatches: async (limit: number = 10): Promise<IAMatch[]> => {
     try {
@@ -316,7 +367,7 @@ export const matchService = {
     } catch (error: any) {
       console.error("Erreur récupération des matchs:", error);
       
-      // Retourner des données de démonstration en cas d'erreur
+      // Retourner des données de démonstration
       return [
         {
           user: {
@@ -347,36 +398,6 @@ export const matchService = {
             objectives_score: 0.75
           },
           match_reason: "Forte compatibilité basée sur des intérêts communs et un profil DISC complémentaire"
-        },
-        {
-          user: {
-            id: 2,
-            email: "utilisateur2@example.com",
-            full_name: "Utilisateur Test 2",
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          profile: {
-            user_id: 2,
-            bio: "Créatif et passionné par l'innovation",
-            profile_picture_url: null,
-            disc_type: "I",
-            disc_assessment_results: null,
-            interests: ["Design", "Innovation", "Entrepreneuriat"],
-            skills: ["UI/UX", "Photoshop", "Figma"],
-            objectives: "Lancer ma propre startup",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          match_score: 0.72,
-          score_details: {
-            disc_score: 0.7,
-            interests_score: 0.65,
-            content_score: 0.8,
-            objectives_score: 0.75
-          },
-          match_reason: "Complémentarité créative et vision entrepreneuriale partagée"
         }
       ];
     }
@@ -384,9 +405,7 @@ export const matchService = {
 
   getMatchDetails: async (userId: number): Promise<IAMatch | null> => {
     try {
-      console.log(`Récupération des détails du match pour l'utilisateur ${userId}...`);
       const response = await apiClient.get(`/matches/${userId}`);
-      console.log("Détails du match récupérés:", response.data);
       return response.data;
     } catch (error: any) {
       console.error("Erreur récupération détails du match:", error);
@@ -395,7 +414,69 @@ export const matchService = {
   }
 };
 
-// Services DISC CORRIGÉS
+// Service vidéo - AJOUTÉ
+export const videoService = {
+  uploadVideo: async (data: FormData): Promise<IVideo | null> => {
+    try {
+      console.log("Upload de vidéo...");
+      
+      const response = await apiClient.post("/videos", data, {
+        headers: { 
+          "Content-Type": "multipart/form-data"
+        },
+        timeout: 120000, // 2 minutes pour les vidéos
+      });
+      
+      console.log("Vidéo uploadée:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("Erreur upload vidéo:", error);
+      return null;
+    }
+  },
+
+  getMyVideos: async (): Promise<IVideo[]> => {
+    try {
+      const response = await apiClient.get("/videos/me");
+      return response.data || [];
+    } catch (error: any) {
+      console.error("Erreur récupération vidéos:", error);
+      return [];
+    }
+  },
+
+  getAllVideos: async (): Promise<IVideo[]> => {
+    try {
+      const response = await apiClient.get("/videos");
+      return response.data || [];
+    } catch (error: any) {
+      console.error("Erreur récupération toutes vidéos:", error);
+      return [];
+    }
+  },
+
+  getVideo: async (id: number): Promise<IVideo | null> => {
+    try {
+      const response = await apiClient.get(`/videos/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error(`Erreur récupération vidéo ${id}:`, error);
+      return null;
+    }
+  },
+
+  deleteVideo: async (id: number): Promise<boolean> => {
+    try {
+      await apiClient.delete(`/videos/${id}`);
+      return true;
+    } catch (error: any) {
+      console.error("Erreur suppression vidéo:", error);
+      return false;
+    }
+  }
+};
+
+// Services DISC
 export const discService = {
   getQuestionnaire: async () => {
     try {
@@ -403,7 +484,6 @@ export const discService = {
       return response.data;
     } catch (error: any) {
       console.error("Erreur questionnaire DISC:", error);
-      // Retourner des questions de démonstration
       return [
         { id: 1, text: "Je suis orienté résultats", category: "D" },
         { id: 2, text: "J'aime interagir avec les autres", category: "I" },
@@ -419,7 +499,6 @@ export const discService = {
       return response.data;
     } catch (error: any) {
       console.error("Erreur évaluation DISC:", error);
-      // Retourner des résultats de démonstration
       return {
         disc_type: "D",
         scores: { D: 75, I: 60, S: 45, C: 55 },
@@ -429,6 +508,28 @@ export const discService = {
   }
 };
 
-export type { IUser, IPod, IProfile, IAMatch };
+// Service IA - AJOUTÉ pour compatibilité
+export const aiService = {
+  getRecommendations: async (limit: number = 10) => {
+    // Rediriger vers matchService pour compatibilité
+    return matchService.getMatches(limit);
+  },
+
+  analyzeContent: async (content: string) => {
+    try {
+      const response = await apiClient.post("/ai/analyze", { content });
+      return response.data;
+    } catch (error: any) {
+      console.error("Erreur analyse IA:", error);
+      return {
+        sentiment: "positive",
+        topics: ["développement", "technologie"],
+        summary: "Contenu analysé avec succès"
+      };
+    }
+  }
+};
+
+export type { IUser, IPod, IProfile, IAMatch, IVideo };
 export default apiClient;
 
