@@ -5,7 +5,7 @@ import axios from "axios";
 import type { DISCScores, DISCResults } from "../schemas/disc_schema";
 
 // Constante pour la taille maximale des fichiers (500 Mo)
-const MAX_FILE_SIZE = 500 * 1024 * 1024;
+const MAX_FILE_SIZE = 200 * 1024 * 1024;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
