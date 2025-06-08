@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { LogIn as LoginIcon, Mail, Lock } from 'lucide-react';
@@ -122,7 +122,15 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // ✅ REDIRECTION AUTOMATIQUE SI DÉJÀ CONNECTÉ
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      console.log("🔄 Utilisateur déjà connecté, redirection vers le profil...");
+      navigate("/profile");
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -130,18 +138,32 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
-        navigate("/");
-      } else {
-        setError("Identifiants incorrects ou problème de connexion");
-      }
+      console.log("🔐 Tentative de connexion...");
+      await login(email, password);
+      
+      // ✅ REDIRECTION IMMÉDIATE APRÈS CONNEXION RÉUSSIE
+      console.log("✅ Connexion réussie, redirection vers le profil...");
+      navigate("/profile");
+      
     } catch (err: any) {
-      setError(err.message || "Une erreur est survenue lors de la connexion. Veuillez réessayer.");
+      console.error("❌ Erreur de connexion:", err);
+      setError(err.message || "Identifiants incorrects ou problème de connexion");
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Affichage de chargement pendant l'initialisation de l'auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Vérification de l'authentification...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
@@ -199,16 +221,25 @@ const LoginPage: React.FC = () => {
               disabled={isLoading}
               variant="primary"
             >
-              <LoginIcon size={20} className="mr-2" />
-              Se connecter
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Connexion en cours...
+                </>
+              ) : (
+                <>
+                  <LoginIcon className="mr-2 h-4 w-4" />
+                  Se connecter
+                </>
+              )}
             </Button>
           </form>
         </CardContent>
 
-        <CardFooter className="flex justify-center">
+        <CardFooter className="text-center">
           <p className="text-sm text-gray-600">
             Nouveau sur Spotbulle?{" "}
-            <Link to="/register" className="text-blue-600 hover:underline">
+            <Link to="/register" className="text-blue-600 hover:text-blue-700 font-medium">
               Créer un compte
             </Link>
           </p>
