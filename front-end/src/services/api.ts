@@ -49,70 +49,51 @@ api.interceptors.response.use(
       console.log('🔐 Token expiré, nettoyage de la session');
       localStorage.removeItem('spotbulle_token');
       localStorage.removeItem('spotbulle_refreshToken');
-      window.location.href = '/login';
+      // Redirection vers login sera gérée par AuthContext
     }
     
     return Promise.reject(error);
   }
 );
 
-// ===== SERVICES D'AUTHENTIFICATION =====
+// ===== SERVICES API =====
 
-export const authService = {
+// Service d'authentification
+const authService = {
   // Connexion utilisateur
   login: async (email: string, password: string) => {
-    console.log('🔐 Tentative de connexion PRODUCTION...');
-    console.log('🔐 Email:', email);
-    console.log('🌐 URL backend:', API_BASE_URL);
+    console.log('🔐 Tentative de connexion pour:', email);
     
     try {
-      // Essayer d'abord avec form-data (format attendu par le backend)
-      const formData = new FormData();
-      formData.append('username', email);
-      formData.append('password', password);
-      
       console.log('📤 Envoi requête de connexion...');
-      const response = await api.post('/auth/token', formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+      const response = await api.post('/auth/login', {
+        username: email, // Backend attend 'username'
+        password: password
       });
       
-      console.log('✅ Connexion backend réussie');
+      console.log('✅ Connexion réussie');
       
-      // Récupérer les informations utilisateur
-      const userResponse = await api.get('/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${response.data.access_token}`
-        }
-      });
-      
-      console.log('👤 Utilisateur:', userResponse.data);
-      
-      // Stocker le token
-      localStorage.setItem('spotbulle_token', response.data.access_token);
-      if (response.data.refresh_token) {
-        localStorage.setItem('spotbulle_refreshToken', response.data.refresh_token);
+      // Stockage des tokens
+      if (response.data.access_token) {
+        localStorage.setItem('spotbulle_token', response.data.access_token);
+        console.log('💾 Token d\'accès stocké');
       }
       
-      return {
-        ...response.data,
-        user: userResponse.data
-      };
+      if (response.data.refresh_token) {
+        localStorage.setItem('spotbulle_refreshToken', response.data.refresh_token);
+        console.log('💾 Token de rafraîchissement stocké');
+      }
+      
+      return response.data;
     } catch (error) {
-      console.error('❌ Erreur connexion backend:', error);
-      throw new Error('Identifiants incorrects ou problème de connexion');
+      console.error('❌ Erreur de connexion:', error);
+      throw error;
     }
   },
 
   // Inscription utilisateur
-  register: async (userData: {
-    full_name: string;
-    email: string;
-    password: string;
-  }) => {
-    console.log('📝 Tentative d\'inscription pour:', userData.email);
-    console.log('🌐 URL backend utilisée:', API_BASE_URL);
+  register: async (userData: any) => {
+    console.log('📝 Inscription nouvel utilisateur:', userData.email);
     
     try {
       console.log('📤 Envoi requête d\'inscription...');
@@ -121,29 +102,18 @@ export const authService = {
       return response.data;
     } catch (error) {
       console.error('❌ Erreur inscription:', error);
-      
-      if (error.response?.status === 400) {
-        throw new Error('Email déjà utilisé ou données invalides');
-      }
-      
-      throw new Error('Erreur lors de l\'inscription');
+      throw error;
     }
-  },
-
-  // Alias pour compatibilité
-  registerUser: async (userData: any) => {
-    return authService.register(userData);
   },
 
   // Récupération du profil utilisateur
   getProfile: async () => {
-    console.log('🔍 Récupération utilisateur backend...');
-    console.log('🌐 URL backend utilisée:', API_BASE_URL);
+    console.log('👤 Récupération du profil utilisateur');
     
     try {
       console.log('📤 Envoi requête profil...');
       const response = await api.get('/auth/me');
-      console.log('✅ Utilisateur backend récupéré:', response.data);
+      console.log('✅ Profil récupéré');
       return response.data;
     } catch (error) {
       console.error('❌ Erreur récupération profil:', error);
@@ -200,84 +170,39 @@ export const authService = {
   },
 };
 
-// ===== SERVICES DE GESTION DES PODS =====
-
-export const podService = {
-  // Récupérer tous les pods
-  fetchAll: async () => {
-    console.log('🎵 Récupération de tous les pods');
-    console.log('🌐 URL backend utilisée:', API_BASE_URL);
+// Service de gestion des pods
+const podService = {
+  // Récupération de tous les pods
+  getAll: async () => {
+    console.log('🎧 Récupération de tous les pods');
     
     try {
-      console.log('📤 Envoi requête pods...');
       const response = await api.get('/pods');
       console.log('✅ Pods récupérés');
       return response.data;
     } catch (error) {
       console.error('❌ Erreur récupération pods:', error);
-      
-      // Données de démo en cas d'erreur
-      const demoPods = [
-        {
-          id: 1,
-          title: 'Transformation Jeunesse',
-          description: 'Comment SpotBulle accompagne la transformation de la jeunesse',
-          audio_url: '/audio/transformation-jeunesse.mp3',
-          duration: 180,
-          created_at: '2025-06-01T10:00:00Z',
-          author: 'SpotBulle Team',
-          plays: 1250,
-          likes: 89,
-          category: 'Développement'
-        },
-        {
-          id: 2,
-          title: 'Développement Personnel',
-          description: 'Techniques et conseils pour votre développement personnel',
-          audio_url: '/audio/developpement-personnel.mp3',
-          duration: 240,
-          created_at: '2025-06-02T14:30:00Z',
-          author: 'Expert Coach',
-          plays: 980,
-          likes: 67,
-          category: 'Coaching'
-        },
-        {
-          id: 3,
-          title: 'Leadership et Communication',
-          description: 'Développer ses compétences de leader et améliorer sa communication',
-          audio_url: '/audio/leadership-communication.mp3',
-          duration: 320,
-          created_at: '2025-06-03T16:15:00Z',
-          author: 'Marie Dubois',
-          plays: 756,
-          likes: 45,
-          category: 'Leadership'
-        }
-      ];
-      
-      console.log('🎭 Utilisation pods démo');
-      return demoPods;
+      throw error;
     }
   },
 
-  // Récupérer les pods de l'utilisateur
-  getUserPods: async () => {
-    console.log('🎵 Récupération des pods utilisateur');
+  // Récupération des pods de l'utilisateur
+  getMy: async () => {
+    console.log('🎧 Récupération de mes pods');
     
     try {
-      const response = await api.get('/pods/user');
-      console.log('✅ Pods utilisateur récupérés');
+      const response = await api.get('/pods/my');
+      console.log('✅ Mes pods récupérés');
       return response.data;
     } catch (error) {
-      console.error('❌ Erreur récupération pods utilisateur:', error);
-      return [];
+      console.error('❌ Erreur récupération mes pods:', error);
+      throw error;
     }
   },
 
-  // Créer un nouveau pod
+  // Création d'un nouveau pod
   create: async (podData: any) => {
-    console.log('🎵 Création d\'un nouveau pod');
+    console.log('🎧 Création nouveau pod');
     
     try {
       const response = await api.post('/pods', podData);
@@ -289,27 +214,19 @@ export const podService = {
     }
   },
 
-  // Upload d'un fichier audio pour un pod
-  uploadAudio: async (file: File, onProgress?: (progress: number) => void) => {
-    console.log('🎤 Upload audio pour pod:', file.name);
+  // Upload d'un fichier audio
+  uploadAudio: async (file: File) => {
+    console.log('🎵 Upload fichier audio');
     
     const formData = new FormData();
     formData.append('audio', file);
     
     try {
-      const response = await api.post('/pods/upload-audio', formData, {
+      const response = await api.post('/pods/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 300000, // 5 minutes pour l'upload
-        onUploadProgress: (progressEvent) => {
-          if (onProgress && progressEvent.total) {
-            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            onProgress(progress);
-          }
-        },
       });
-      
       console.log('✅ Audio uploadé');
       return response.data;
     } catch (error) {
@@ -317,27 +234,12 @@ export const podService = {
       throw error;
     }
   },
-
-  // Supprimer un pod
-  delete: async (podId: number) => {
-    console.log('🗑️ Suppression du pod:', podId);
-    
-    try {
-      const response = await api.delete(`/pods/${podId}`);
-      console.log('✅ Pod supprimé');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Erreur suppression pod:', error);
-      throw error;
-    }
-  },
 };
 
-// ===== SERVICES DE MATCHING =====
-
-export const matchService = {
-  // Récupérer les matches de l'utilisateur
-  getMatches: async () => {
+// Service de gestion des matches
+const matchService = {
+  // Récupération des matches
+  getAll: async () => {
     console.log('💕 Récupération des matches');
     
     try {
@@ -346,93 +248,58 @@ export const matchService = {
       return response.data;
     } catch (error) {
       console.error('❌ Erreur récupération matches:', error);
-      
-      // Données de démo
-      const demoMatches = [
-        {
-          id: 1,
-          user: {
-            id: 2,
-            full_name: 'Marie Dubois',
-            email: 'marie.dubois@example.com',
-            bio: 'Passionnée de développement personnel et de coaching',
-            interests: 'Leadership, Communication, Entrepreneuriat'
-          },
-          compatibility_score: 92,
-          match_reason: 'Intérêts communs en développement personnel et leadership',
-          created_at: '2025-06-07T10:00:00Z',
-          status: 'pending'
-        },
-        {
-          id: 2,
-          user: {
-            id: 3,
-            full_name: 'Thomas Martin',
-            email: 'thomas.martin@example.com',
-            bio: 'Entrepreneur et mentor en transformation digitale',
-            interests: 'Innovation, Technologie, Mentorat'
-          },
-          compatibility_score: 87,
-          match_reason: 'Profils complémentaires en entrepreneuriat',
-          created_at: '2025-06-06T15:30:00Z',
-          status: 'accepted'
-        }
-      ];
-      
-      console.log('🎭 Utilisation matches démo');
-      return demoMatches;
+      throw error;
     }
   },
 
-  // Accepter ou refuser un match
-  respondToMatch: async (matchId: number, action: 'accept' | 'decline') => {
-    console.log(`💕 Réponse au match ${matchId}: ${action}`);
+  // Accepter un match
+  accept: async (matchId: string) => {
+    console.log('✅ Acceptation du match:', matchId);
     
     try {
-      const response = await api.post(`/matches/${matchId}/respond`, { action });
-      console.log('✅ Réponse au match envoyée');
+      const response = await api.post(`/matches/${matchId}/accept`);
+      console.log('✅ Match accepté');
       return response.data;
     } catch (error) {
-      console.error('❌ Erreur réponse match:', error);
-      return { success: true, message: 'Réponse enregistrée' };
+      console.error('❌ Erreur acceptation match:', error);
+      throw error;
     }
   },
 
-  // Obtenir des recommandations
-  getRecommendations: async () => {
-    console.log('🎯 Récupération des recommandations');
+  // Refuser un match
+  reject: async (matchId: string) => {
+    console.log('❌ Refus du match:', matchId);
     
     try {
-      const response = await api.get('/matches/recommendations');
-      console.log('✅ Recommandations récupérées');
+      const response = await api.post(`/matches/${matchId}/reject`);
+      console.log('✅ Match refusé');
       return response.data;
     } catch (error) {
-      console.error('❌ Erreur récupération recommandations:', error);
-      
-      // Recommandations de démo
-      const demoRecommendations = [
-        {
-          id: 4,
-          full_name: 'Sophie Laurent',
-          email: 'sophie.laurent@example.com',
-          bio: 'Coach en développement personnel spécialisée en confiance en soi',
-          interests: 'Psychologie positive, Méditation, Coaching',
-          compatibility_score: 89,
-          reason: 'Expertise complémentaire en développement personnel'
-        }
-      ];
-      
-      return demoRecommendations;
+      console.error('❌ Erreur refus match:', error);
+      throw error;
     }
   },
 };
 
-// ===== SERVICES VIDÉO =====
+// Service de gestion des vidéos
+const videoService = {
+  // Récupération des vidéos
+  getAll: async () => {
+    console.log('🎬 Récupération des vidéos');
+    
+    try {
+      const response = await api.get('/videos');
+      console.log('✅ Vidéos récupérées');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Erreur récupération vidéos:', error);
+      throw error;
+    }
+  },
 
-export const videoService = {
   // Upload d'une vidéo
-  upload: async (file: File, onProgress?: (progress: number) => void) => {
-    console.log('🎬 Upload vidéo:', file.name);
+  upload: async (file: File) => {
+    console.log('🎬 Upload vidéo');
     
     const formData = new FormData();
     formData.append('video', file);
@@ -442,15 +309,7 @@ export const videoService = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 600000, // 10 minutes pour l'upload vidéo
-        onUploadProgress: (progressEvent) => {
-          if (onProgress && progressEvent.total) {
-            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            onProgress(progress);
-          }
-        },
       });
-      
       console.log('✅ Vidéo uploadée');
       return response.data;
     } catch (error) {
@@ -460,284 +319,156 @@ export const videoService = {
   },
 
   // Traitement d'une vidéo
-  process: async (videoId: string, options: any) => {
+  process: async (videoId: string) => {
     console.log('⚙️ Traitement vidéo:', videoId);
     
     try {
-      const response = await api.post(`/videos/${videoId}/process`, options);
-      console.log('✅ Traitement vidéo lancé');
+      const response = await api.post(`/videos/${videoId}/process`);
+      console.log('✅ Vidéo traitée');
       return response.data;
     } catch (error) {
       console.error('❌ Erreur traitement vidéo:', error);
       throw error;
     }
   },
-
-  // Récupérer le statut du traitement
-  getProcessingStatus: async (videoId: string) => {
-    try {
-      const response = await api.get(`/videos/${videoId}/status`);
-      return response.data;
-    } catch (error) {
-      console.error('❌ Erreur statut traitement:', error);
-      return { status: 'unknown' };
-    }
-  },
-
-  // Récupérer toutes les vidéos
-  getAll: async () => {
-    console.log('🎬 Récupération de toutes les vidéos');
-    
-    try {
-      const response = await api.get('/videos');
-      console.log('✅ Vidéos récupérées');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Erreur récupération vidéos:', error);
-      return [];
-    }
-  },
 };
 
-// ===== SERVICES DE TRANSCRIPTION =====
-
-export const transcriptionService = {
-  // Transcrire un fichier audio
-  transcribe: async (file: File, options?: any) => {
-    console.log('🎤 Transcription audio:', file.name);
+// Service de transcription
+const transcriptionService = {
+  // Transcription d'un fichier audio
+  transcribe: async (file: File) => {
+    console.log('📝 Transcription audio');
     
     const formData = new FormData();
     formData.append('audio', file);
-    if (options) {
-      formData.append('options', JSON.stringify(options));
-    }
     
     try {
       const response = await api.post('/transcription/transcribe', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 300000, // 5 minutes
       });
-      
       console.log('✅ Transcription terminée');
       return response.data;
     } catch (error) {
       console.error('❌ Erreur transcription:', error);
-      
-      // Simulation de transcription en cas d'erreur
-      return {
-        text: `Transcription de démonstration pour le fichier "${file.name}". 
-               
-               Bonjour et bienvenue sur SpotBulle, votre plateforme de transformation personnelle par l'audio. 
-               
-               Dans cet enregistrement, nous explorons les techniques de développement personnel qui peuvent 
-               transformer votre vie professionnelle et personnelle. 
-               
-               Les points clés abordés incluent la confiance en soi, la communication efficace, et les 
-               stratégies de leadership authentique.
-               
-               Merci de votre écoute et n'hésitez pas à partager vos réflexions avec la communauté SpotBulle.`,
-        confidence: 0.95,
-        duration: Math.floor(file.size / 16000), // Estimation basée sur la taille
-        language: 'fr',
-        words_count: 87,
-        processing_time: 2.3
-      };
+      throw error;
     }
   },
 
-  // Récupérer l'historique des transcriptions
-  getHistory: async () => {
-    console.log('📜 Récupération historique transcriptions');
+  // Récupération des transcriptions
+  getAll: async () => {
+    console.log('📝 Récupération des transcriptions');
     
     try {
-      const response = await api.get('/transcription/history');
-      console.log('✅ Historique récupéré');
+      const response = await api.get('/transcription');
+      console.log('✅ Transcriptions récupérées');
       return response.data;
     } catch (error) {
-      console.error('❌ Erreur historique transcriptions:', error);
-      
-      // Historique de démo
-      return [
-        {
-          id: 1,
-          filename: 'presentation-spotbulle.mp3',
-          text: 'Transcription de la présentation SpotBulle...',
-          created_at: '2025-06-08T10:00:00Z',
-          duration: 180,
-          confidence: 0.92
-        }
-      ];
+      console.error('❌ Erreur récupération transcriptions:', error);
+      throw error;
     }
   },
 };
 
-// ===== SERVICES D'ANALYSE DISC =====
-
-export const discService = {
-  // Effectuer une évaluation DISC
-  evaluate: async (responses: any[]) => {
-    console.log('🧠 Évaluation DISC');
+// Service DISC
+const discService = {
+  // Soumission du questionnaire DISC
+  submit: async (answers: any) => {
+    console.log('📊 Soumission questionnaire DISC');
     
     try {
-      const response = await api.post('/disc/evaluate', { responses });
-      console.log('✅ Évaluation DISC terminée');
+      const response = await api.post('/disc/submit', answers);
+      console.log('✅ Questionnaire DISC soumis');
       return response.data;
     } catch (error) {
-      console.error('❌ Erreur évaluation DISC:', error);
-      
-      // Résultat de démo
-      return {
-        profile: 'Dominant-Influent',
-        scores: {
-          D: 75,
-          I: 80,
-          S: 45,
-          C: 60
-        },
-        description: 'Profil orienté action et communication. Vous êtes naturellement porté vers le leadership et l\'influence positive.',
-        recommendations: [
-          'Excellent en leadership et prise de décision',
-          'Forte capacité d\'influence et de persuasion',
-          'Besoin de défis stimulants et de variété',
-          'Développer la patience pour les détails'
-        ],
-        strengths: [
-          'Leadership naturel',
-          'Communication persuasive',
-          'Orientation résultats',
-          'Adaptabilité'
-        ],
-        areas_for_growth: [
-          'Attention aux détails',
-          'Patience avec les processus',
-          'Écoute active'
-        ]
-      };
+      console.error('❌ Erreur soumission DISC:', error);
+      throw error;
     }
   },
 
-  // Récupérer le profil DISC de l'utilisateur
+  // Récupération du profil DISC
   getProfile: async () => {
-    console.log('🧠 Récupération profil DISC');
+    console.log('📊 Récupération profil DISC');
     
     try {
       const response = await api.get('/disc/profile');
       console.log('✅ Profil DISC récupéré');
       return response.data;
     } catch (error) {
-      console.error('❌ Erreur profil DISC:', error);
-      return null;
-    }
-  },
-};
-
-// ===== SERVICES IA =====
-
-export const aiService = {
-  // Analyse de contenu par IA
-  analyzeContent: async (content: string, type: 'text' | 'audio' | 'video') => {
-    console.log('🤖 Analyse IA du contenu');
-    
-    try {
-      const response = await api.post('/ai/analyze', { content, type });
-      console.log('✅ Analyse IA terminée');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Erreur analyse IA:', error);
-      
-      // Résultat de démo
-      return {
-        sentiment: 'positive',
-        confidence: 0.87,
-        keywords: ['développement', 'personnel', 'transformation', 'leadership', 'communication'],
-        summary: 'Contenu orienté développement personnel avec un ton positif et motivant',
-        themes: [
-          'Développement personnel',
-          'Leadership',
-          'Communication',
-          'Transformation'
-        ],
-        recommendations: [
-          'Contenu adapté pour un public en quête de croissance personnelle',
-          'Ton motivant et inspirant qui encourage l\'action',
-          'Approche pratique et applicable au quotidien'
-        ],
-        engagement_score: 8.5,
-        readability_score: 7.8
-      };
-    }
-  },
-
-  // Génération de recommandations personnalisées
-  getPersonalizedRecommendations: async (userId: number) => {
-    console.log('🎯 Génération recommandations personnalisées');
-    
-    try {
-      const response = await api.get(`/ai/recommendations/${userId}`);
-      console.log('✅ Recommandations générées');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Erreur recommandations IA:', error);
-      
-      // Recommandations de démo
-      return [
-        {
-          type: 'pod',
-          title: 'Développer votre leadership authentique',
-          description: 'Basé sur votre profil DISC, ce contenu vous aidera à renforcer vos compétences de leader',
-          confidence: 0.92
-        },
-        {
-          type: 'match',
-          title: 'Connexion avec des mentors en communication',
-          description: 'Nous avons identifié des profils qui pourraient vous accompagner dans votre développement',
-          confidence: 0.88
-        }
-      ];
-    }
-  },
-};
-
-// ===== SERVICES DE PROFIL =====
-
-export const profileService = {
-  // Récupérer un profil public
-  getPublicProfile: async (userId: number) => {
-    console.log('👤 Récupération profil public:', userId);
-    
-    try {
-      const response = await api.get(`/profiles/${userId}`);
-      console.log('✅ Profil public récupéré');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Erreur profil public:', error);
-      return null;
-    }
-  },
-
-  // Mettre à jour les préférences
-  updatePreferences: async (preferences: any) => {
-    console.log('⚙️ Mise à jour préférences');
-    
-    try {
-      const response = await api.put('/profiles/preferences', preferences);
-      console.log('✅ Préférences mises à jour');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Erreur mise à jour préférences:', error);
+      console.error('❌ Erreur récupération profil DISC:', error);
       throw error;
     }
   },
 };
 
-// ===== SERVICES D'UPLOAD D'IMAGES =====
+// Service IA
+const aiService = {
+  // Chat avec l'IA
+  chat: async (message: string) => {
+    console.log('🤖 Chat avec IA');
+    
+    try {
+      const response = await api.post('/ai/chat', { message });
+      console.log('✅ Réponse IA reçue');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Erreur chat IA:', error);
+      throw error;
+    }
+  },
 
-export const imageService = {
+  // Analyse de personnalité
+  analyzePersonality: async (data: any) => {
+    console.log('🧠 Analyse de personnalité');
+    
+    try {
+      const response = await api.post('/ai/analyze', data);
+      console.log('✅ Analyse terminée');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Erreur analyse:', error);
+      throw error;
+    }
+  },
+};
+
+// Service de profils
+const profileService = {
+  // Recherche de profils
+  search: async (criteria: any) => {
+    console.log('🔍 Recherche de profils');
+    
+    try {
+      const response = await api.post('/profiles/search', criteria);
+      console.log('✅ Profils trouvés');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Erreur recherche profils:', error);
+      throw error;
+    }
+  },
+
+  // Récupération d'un profil
+  getById: async (profileId: string) => {
+    console.log('👤 Récupération profil:', profileId);
+    
+    try {
+      const response = await api.get(`/profiles/${profileId}`);
+      console.log('✅ Profil récupéré');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Erreur récupération profil:', error);
+      throw error;
+    }
+  },
+};
+
+// Service de gestion des images
+const imageService = {
   // Upload d'une image
-  upload: async (file: File, onProgress?: (progress: number) => void) => {
-    console.log('🖼️ Upload image:', file.name);
+  upload: async (file: File) => {
+    console.log('🖼️ Upload image');
     
     const formData = new FormData();
     formData.append('image', file);
@@ -746,13 +477,6 @@ export const imageService = {
       const response = await api.post('/images/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-        },
-        timeout: 120000, // 2 minutes pour l'upload d'image
-        onUploadProgress: (progressEvent) => {
-          if (onProgress && progressEvent.total) {
-            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            onProgress(progress);
-          }
         },
       });
       
@@ -783,6 +507,10 @@ export const imageService = {
 
 // Export de l'instance axios configurée
 export { api };
+
+// Export des fonctions pour compatibilité avec AuthContext
+export const getCurrentUser = authService.getCurrentUser;
+export const refreshToken = authService.refreshToken;
 
 // Export par défaut de tous les services
 export default {
