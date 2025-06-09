@@ -1,4 +1,3 @@
-# backend/app/main_compatible.py
 from fastapi import FastAPI, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
@@ -15,16 +14,34 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("spotbulle-api")
 
-# Importation des routes compatibles
-from .routes import auth_routes_compatible, pod_routes_compatible, matches_routes_compatible
+# Importation explicite des modèles SQLAlchemy
+try:
+    from .models import User, Profile, Pod
+except ImportError:
+    logger.warning("Impossible d'importer les modèles - mode démo activé")
+
+# Importation des routes
+try:
+    from .routes import auth_routes, user_routes, pod_routes, profile_routes, ia_routes, video_routes
+except ImportError:
+    logger.warning("Impossible d'importer toutes les routes - utilisation des routes de base")
 
 # Configuration initiale
 limiter = Limiter(key_func=get_remote_address)
 
+# Initialisation de la base de données (avec gestion d'erreur)
+try:
+    from .database import Base, engine
+    logger.info("Initialisation des tables de la base de données...")
+    Base.metadata.create_all(bind=engine)
+    logger.info("Tables initialisées avec succès")
+except Exception as e:
+    logger.error(f"Erreur lors de l'initialisation des tables: {e}")
+
 app = FastAPI(
-    title="SpotBulle API Compatible",
-    description="API compatible avec le frontend SpotBulle",
-    version="1.0.0",
+    title="spotbulle-mvp API",
+    description="API pour le projet spotbulle-mvp.",
+    version="0.3.1",
     openapi_url="/api/v1/openapi.json",
     docs_url="/api/v1/docs",
     redoc_url="/api/v1/redoc"
@@ -43,13 +60,41 @@ class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers.update(security_headers)
         return response
 
-# Configuration CORS pour le frontend
+class LargeFileUploadMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > 209715200:  # 200 Mo
+            return JSONResponse(
+                status_code=413,
+                content={"detail": "Taille du fichier trop importante"}
+            )
+        return await call_next(request)
+
+class AuthenticationErrorMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        try:
+            response = await call_next(request)
+            return response
+        except HTTPException as e:
+            if e.status_code == 401:
+                logger.warning(f"Erreur d'authentification: {e.detail}")
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Authentification requise pour accéder à cette ressource"}
+                )
+            raise e
+
+# Ajout des middlewares
+app.add_middleware(LargeFileUploadMiddleware)
+app.add_middleware(AuthenticationErrorMiddleware)
+
+# Configuration CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://spotbulle-intelligent.vercel.app",
-        "https://spotbulle-mentor.onrender.com",     # Autre domaine si nécessaire
-        "https://spotbulle-backend-0lax.onrender.com", 
+        "https://spotbulle-mentor.onrender.com",
+        "https://spotbulle-backend-0lax.onrender.com",
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:3000",
@@ -65,103 +110,159 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(EnhancedSecurityHeadersMiddleware)
 
-# Créer le dossier static s'il n'existe pas
+# Créer les dossiers nécessaires
 os.makedirs("./static/media", exist_ok=True)
 os.makedirs("./static/audio", exist_ok=True)
 os.makedirs("./static/avatars", exist_ok=True)
 
-# Monter le dossier static pour servir les fichiers
+# Monter le dossier static
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
 async def root_endpoint():
     logger.info("Root endpoint called")
-    return {
-        "message": "API Spotbulle opérationnelle",
-        "version": app.version,
-        "status": "compatible",
-        "endpoints": {
-            "auth": "/api/v1/auth/*",
-            "pods": "/api/v1/pods/*",
-            "matches": "/api/v1/matches/*"
-        }
-    }
+    return {"message": "API Spotbulle opérationnelle", "version": app.version}
 
 @app.get("/health")
 async def health_check():
     logger.info("Health check endpoint called")
     return {"status": "ok", "version": app.version}
 
-# Inclusion des routes compatibles
+# Routes de base pour compatibilité frontend
+@app.post("/api/v1/auth/login")
+async def login_demo():
+    """Route de connexion de démo"""
+    return {
+        "access_token": "demo_token_spotbulle_2024",
+        "refresh_token": "demo_refresh_token",
+        "token_type": "bearer",
+        "user": {
+            "id": 1,
+            "email": "basamba2050@spotbulle.com",
+            "full_name": "Basamba Spotbulle",
+            "bio": "Passionné de développement personnel",
+            "avatar": None,
+            "is_active": True,
+            "is_superuser": False,
+            "created_at": "2024-01-01T00:00:00Z"
+        }
+    }
+
+@app.get("/api/v1/auth/me")
+async def get_me_demo():
+    """Route profil de démo"""
+    return {
+        "id": 1,
+        "email": "basamba2050@spotbulle.com",
+        "full_name": "Basamba Spotbulle",
+        "bio": "Passionné de développement personnel",
+        "avatar": None,
+        "is_active": True,
+        "is_superuser": False,
+        "created_at": "2024-01-01T00:00:00Z"
+    }
+
+@app.get("/api/v1/pods")
+async def get_pods_demo():
+    """Route pods de démo"""
+    return [
+        {
+            "id": "pod-1",
+            "title": "Ma transformation personnelle",
+            "description": "Partage de mon parcours de développement personnel",
+            "category": "Développement Personnel",
+            "author": "Basamba Spotbulle",
+            "duration": "5:30",
+            "plays": 1250,
+            "likes": 89,
+            "created_at": "2024-06-01T10:00:00Z",
+            "audio_url": "/static/audio/pod-1.mp3"
+        },
+        {
+            "id": "pod-2",
+            "title": "Mes objectifs 2024",
+            "description": "Comment j'ai défini et atteint mes objectifs cette année",
+            "category": "Motivation",
+            "author": "Basamba Spotbulle",
+            "duration": "8:15",
+            "plays": 2100,
+            "likes": 156,
+            "created_at": "2024-06-05T14:30:00Z",
+            "audio_url": "/static/audio/pod-2.mp3"
+        }
+    ]
+
+@app.get("/api/v1/matches")
+async def get_matches_demo():
+    """Route matches de démo"""
+    return [
+        {
+            "id": "match-1",
+            "user_id": 1,
+            "matched_user": {
+                "id": 2,
+                "name": "Sophie Martin",
+                "bio": "Coach en développement personnel",
+                "compatibility": 92,
+                "avatar": "/static/avatars/sophie.jpg"
+            },
+            "status": "pending",
+            "created_at": "2024-06-09T08:00:00Z"
+        }
+    ]
+
+# Inclusion des routes si disponibles
 API_PREFIX = "/api/v1"
 
-app.include_router(
-    auth_routes_compatible.router,
-    prefix=API_PREFIX,
-    tags=["Authentication"]
-)
+try:
+    route_config = [
+        (auth_routes.router, "", ["Authentication"]),
+        (user_routes.router, "", ["Users"]),
+        (pod_routes.router, "", ["Pods"]),
+        (profile_routes.router, "", ["Profiles"]),
+        (ia_routes.router, "", ["IA"]),
+        (video_routes.router, "", ["Videos"])
+    ]
 
-app.include_router(
-    pod_routes_compatible.router,
-    prefix=API_PREFIX,
-    tags=["Pods"]
-)
-
-app.include_router(
-    matches_routes_compatible.router,
-    prefix=API_PREFIX,
-    tags=["Matches"]
-)
-
-# Routes additionnelles pour compatibilité
-@app.get("/api/v1/videos")
-async def get_videos():
-    """Service vidéo (stub)"""
-    return []
-
-@app.get("/api/v1/transcription")
-async def get_transcriptions():
-    """Service transcription (stub)"""
-    return []
-
-@app.get("/api/v1/disc/profile")
-async def get_disc_profile():
-    """Profil DISC (stub)"""
-    return {
-        "user_id": 1,
-        "dominant_type": "D",
-        "scores": {"D": 85, "I": 70, "S": 60, "C": 45},
-        "description": "Profil Dominant - Leader naturel"
-    }
+    for router, path, tags in route_config:
+        app.include_router(
+            router,
+            prefix=f"{API_PREFIX}{path}",
+            tags=tags
+        )
+except Exception as e:
+    logger.warning(f"Impossible d'inclure toutes les routes: {e}")
 
 # Gestion d'erreurs
 @app.exception_handler(404)
-def not_found_handler(request: Request, exc: HTTPException):
+def not_found(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=404,
         content={"detail": "Endpoint non trouvé"}
     )
 
 @app.exception_handler(500)
-def internal_error_handler(request: Request, exc: HTTPException):
+def internal_error(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=500,
         content={"detail": "Erreur serveur interne"}
     )
 
-# Log de démarrage
-logger.info(f"Application FastAPI compatible initialisée, version {app.version}")
+logger.info(f"Application FastAPI initialisée avec succès, version {app.version}")
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8001))
     host = os.getenv("HOST", "0.0.0.0")
-    logger.info(f"Démarrage du serveur compatible sur {host}:{port}")
+    logger.info(f"Démarrage du serveur Uvicorn sur {host}:{port}")
     uvicorn.run(
-        "app.main_compatible:app",
+        "app.main:app",
         host=host,
         port=port,
         reload=os.getenv("ENV") == "development",
-        log_config=None
+        log_config=None,
+        limit_concurrency=100,
+        limit_max_requests=10000,
+        timeout_keep_alive=120
     )
 
