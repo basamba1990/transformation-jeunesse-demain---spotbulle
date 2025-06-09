@@ -56,6 +56,31 @@ api.interceptors.response.use(
   }
 );
 
+// ===== TYPES TYPESCRIPT =====
+
+export interface IPod {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  author: string;
+  duration: string;
+  plays: number;
+  likes: number;
+  created_at: string;
+  audio_url?: string;
+}
+
+export interface DISCQuestion {
+  id: string;
+  question: string;
+  options: string[];
+}
+
+export interface DISCAssessmentRequest {
+  answers: Record<string, string>;
+}
+
 // ===== SERVICES API =====
 
 // Service d'authentification
@@ -503,7 +528,7 @@ const imageService = {
   },
 };
 
-// ===== EXPORT PRINCIPAL =====
+// ===== EXPORTS =====
 
 // Export de l'instance axios configurée
 export { api };
@@ -511,6 +536,17 @@ export { api };
 // Export des fonctions pour compatibilité avec AuthContext
 export const getCurrentUser = authService.getCurrentUser;
 export const refreshToken = authService.refreshToken;
+
+// Export de tous les services individuellement
+export { authService };
+export { podService };
+export { matchService };
+export { videoService };
+export { transcriptionService };
+export { discService };
+export { aiService };
+export { profileService };
+export { imageService };
 
 // Export par défaut de tous les services
 export default {
