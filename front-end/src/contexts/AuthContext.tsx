@@ -109,7 +109,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // ✅ FONCTION D'INSCRIPTION CORRIGÉE
+  // ✅ FONCTION D'INSCRIPTION AJUSTÉE
   const register = async (email: string, password: string, fullName: string): Promise<boolean> => {
     console.log('📝 Tentative d\'inscription via AuthContext...');
     setIsLoading(true);
@@ -118,7 +118,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Import dynamique pour éviter les dépendances circulaires
       const { authService } = await import('../services/api');
       
-      // ✅ CORRECTION : Passer un objet userData au lieu de paramètres séparés
+      // Formatage correct des données
       const userData = {
         email: email,
         password: password,
@@ -128,16 +128,50 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('📤 Données d\'inscription:', userData);
       const result = await authService.register(userData);
       
-      if (result.success && result.user) {
-        setUser(result.user);
-        console.log('✅ Inscription réussie via AuthContext');
-        return true;
-      } else {
-        console.log('❌ Échec de l\'inscription');
-        return false;
+      console.log('🔍 Réponse complète du backend:', result);
+      
+      // ✅ VALIDATION AJUSTÉE : Vérifier différents formats de réponse
+      if (result && (
+        // Format 1: {success: true, user: {...}}
+        (result.success === true && result.user) ||
+        // Format 2: {user: {...}} (sans champ success)
+        (result.user && !result.hasOwnProperty('success')) ||
+        // Format 3: Réponse directe utilisateur
+        (result.id && result.email) ||
+        // Format 4: Status 200 avec message
+        (result.message && result.message.includes('success'))
+      )) {
+        // Extraire l'utilisateur selon le format
+        const userData = result.user || result;
+        
+        if (userData && userData.email) {
+          setUser(userData);
+          console.log('✅ Inscription réussie via AuthContext - Utilisateur:', userData.email);
+          return true;
+        }
       }
-    } catch (error) {
+      
+      // Si aucun format reconnu, considérer comme échec
+      console.log('❌ Format de réponse non reconnu ou inscription échouée');
+      console.log('📋 Détails de la réponse:', JSON.stringify(result, null, 2));
+      return false;
+      
+    } catch (error: any) {
       console.error('❌ Erreur d\'inscription:', error);
+      
+      // ✅ GESTION SPÉCIALE : Si l'erreur contient un status 200, c'est peut-être un succès
+      if (error.response && error.response.status === 200) {
+        console.log('🔍 Status 200 détecté dans l\'erreur, analyse...');
+        const responseData = error.response.data;
+        
+        if (responseData && (responseData.user || responseData.email)) {
+          const userData = responseData.user || responseData;
+          setUser(userData);
+          console.log('✅ Inscription réussie malgré l\'erreur (Status 200)');
+          return true;
+        }
+      }
+      
       return false;
     } finally {
       setIsLoading(false);
@@ -207,7 +241,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isAuthenticated: !!user,
     isLoading,
     login,
-    register, // ✅ FONCTION CORRIGÉE
+    register, // ✅ FONCTION AJUSTÉE
     logout,
     updateUser,
   };
