@@ -18,6 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
+  register: (email: string, password: string, fullName: string) => Promise<boolean>; // ✅ AJOUTÉ
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
 }
@@ -108,6 +109,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // ✅ NOUVELLE FONCTION D'INSCRIPTION
+  const register = async (email: string, password: string, fullName: string): Promise<boolean> => {
+    console.log('📝 Tentative d\'inscription via AuthContext...');
+    setIsLoading(true);
+
+    try {
+      // Import dynamique pour éviter les dépendances circulaires
+      const { authService } = await import('../services/api');
+      
+      const result = await authService.register(email, password, fullName);
+      
+      if (result.success && result.user) {
+        setUser(result.user);
+        console.log('✅ Inscription réussie via AuthContext');
+        return true;
+      } else {
+        console.log('❌ Échec de l\'inscription');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Erreur d\'inscription:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Fonction de déconnexion
   const logout = async (): Promise<void> => {
     console.log('👋 Déconnexion via AuthContext...');
@@ -171,6 +199,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isAuthenticated: !!user,
     isLoading,
     login,
+    register, // ✅ AJOUTÉ
     logout,
     updateUser,
   };
