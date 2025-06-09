@@ -48,6 +48,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://spotbulle-intelligent.vercel.app",
+        "https://spotbulle-mentor.onrender.com",     # Autre domaine si nécessaire
+        "https://spotbulle-backend-0lax.onrender.com", 
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:3000",
@@ -152,7 +154,7 @@ logger.info(f"Application FastAPI compatible initialisée, version {app.version}
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.getenv("PORT", 8001))
     host = os.getenv("HOST", "0.0.0.0")
     logger.info(f"Démarrage du serveur compatible sur {host}:{port}")
     uvicorn.run(
