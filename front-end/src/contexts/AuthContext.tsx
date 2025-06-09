@@ -18,7 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, fullName: string) => Promise<boolean>; // ✅ AJOUTÉ
+  register: (email: string, password: string, fullName: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
 }
@@ -109,7 +109,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // ✅ NOUVELLE FONCTION D'INSCRIPTION
+  // ✅ FONCTION D'INSCRIPTION CORRIGÉE
   const register = async (email: string, password: string, fullName: string): Promise<boolean> => {
     console.log('📝 Tentative d\'inscription via AuthContext...');
     setIsLoading(true);
@@ -118,7 +118,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Import dynamique pour éviter les dépendances circulaires
       const { authService } = await import('../services/api');
       
-      const result = await authService.register(email, password, fullName);
+      // ✅ CORRECTION : Passer un objet userData au lieu de paramètres séparés
+      const userData = {
+        email: email,
+        password: password,
+        full_name: fullName
+      };
+      
+      console.log('📤 Données d\'inscription:', userData);
+      const result = await authService.register(userData);
       
       if (result.success && result.user) {
         setUser(result.user);
@@ -199,7 +207,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isAuthenticated: !!user,
     isLoading,
     login,
-    register, // ✅ AJOUTÉ
+    register, // ✅ FONCTION CORRIGÉE
     logout,
     updateUser,
   };
