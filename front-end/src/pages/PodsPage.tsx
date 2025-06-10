@@ -46,70 +46,6 @@ const PodsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"all" | "my">("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Données de démonstration enrichies
-  const demoPods: Pod[] = [
-    {
-      id: 1,
-      title: "Transformation Jeunesse",
-      description: "Comment SpotBulle accompagne la transformation de la jeunesse vers un avenir prometteur",
-      audio_url: "/audio/transformation-jeunesse.mp3",
-      duration: 180,
-      created_at: "2025-06-01T10:00:00Z",
-      author: "SpotBulle Team",
-      plays: 1250,
-      likes: 89,
-      category: "Développement"
-    },
-    {
-      id: 2,
-      title: "Développement Personnel",
-      description: "Techniques et conseils pratiques pour votre développement personnel et professionnel",
-      audio_url: "/audio/developpement-personnel.mp3",
-      duration: 240,
-      created_at: "2025-06-02T14:30:00Z",
-      author: "Expert Coach",
-      plays: 980,
-      likes: 67,
-      category: "Coaching"
-    },
-    {
-      id: 3,
-      title: "Méditation Guidée",
-      description: "Une séance de méditation guidée pour la concentration et la paix intérieure",
-      audio_url: "/audio/meditation-guidee.mp3",
-      duration: 300,
-      created_at: "2025-06-03T09:15:00Z",
-      author: "Maître Zen",
-      plays: 1500,
-      likes: 120,
-      category: "Bien-être"
-    },
-    {
-      id: 4,
-      title: "Leadership Inspirant",
-      description: "Les clés d'un leadership authentique et inspirant pour transformer votre équipe",
-      audio_url: "/audio/leadership-inspirant.mp3",
-      duration: 210,
-      created_at: "2025-06-04T16:45:00Z",
-      author: "CEO Mentor",
-      plays: 750,
-      likes: 45,
-      category: "Leadership"
-    },
-    {
-      id: 5,
-      title: "Motivation Quotidienne",
-      description: "Boostez votre motivation avec ces conseils pratiques pour rester motivé au quotidien",
-      audio_url: "/audio/motivation-quotidienne.mp3",
-      duration: 150,
-      created_at: "2025-06-05T08:00:00Z",
-      author: "Coach Motivation",
-      plays: 2100,
-      likes: 156,
-      category: "Motivation"
-    }
-  ];
-
   useEffect(() => {
     if (isAuthenticated && user) {
       loadPods();
@@ -140,11 +76,8 @@ const PodsPage: React.FC = () => {
       console.log('✅ Pods chargés:', podsData.length);
     } catch (error) {
       console.error('❌ Erreur lors du chargement des pods:', error);
-      setError("Impossible de charger les pods. Affichage des données de démonstration.");
-      
-      // Utiliser les données de démo en cas d'erreur
-      const demoData = activeTab === "all" ? demoPods : demoPods.slice(0, 2);
-      setPods(demoData);
+      setError("Impossible de charger les pods. Veuillez réessayer.");
+      setPods([]);
     } finally {
       setIsLoading(false);
     }

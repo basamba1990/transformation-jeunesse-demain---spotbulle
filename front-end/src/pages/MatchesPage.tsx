@@ -27,52 +27,26 @@ const MatchesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  // Données de démonstration pour les matches
-  const demoMatches: Match[] = [
-    {
-      id: 1,
-      user: {
-        id: 2,
-        full_name: "Marie Dubois",
-        email: "marie.dubois@example.com",
-        bio: "Passionnée de développement personnel et de leadership",
-        interests: "Leadership, Communication, Entrepreneuriat"
-      },
-      compatibility_score: 92,
-      match_reason: "Intérêts communs en développement personnel et leadership",
-      created_at: "2025-06-07T10:00:00Z",
-      status: "pending"
-    },
-    {
-      id: 2,
-      user: {
-        id: 3,
-        full_name: "Jean Martin",
-        email: "jean.martin@example.com",
-        bio: "Coach en transformation personnelle",
-        interests: "Coaching, Méditation, Croissance personnelle"
-      },
-      compatibility_score: 87,
-      match_reason: "Profils complémentaires en coaching et développement",
-      created_at: "2025-06-06T15:30:00Z",
-      status: "accepted"
-    },
-    {
-      id: 3,
-      user: {
-        id: 4,
-        full_name: "Sophie Laurent",
-        email: "sophie.laurent@example.com",
-        bio: "Experte en communication et relations humaines",
-        interests: "Communication, Relations humaines, Formation"
-      },
-      compatibility_score: 84,
-      match_reason: "Expertise complémentaire en communication",
-      created_at: "2025-06-05T09:15:00Z",
-      status: "pending"
+  const loadMatches = async () => {
+    setIsLoading(true);
+    setError("");
+    
+    try {
+      // TODO: Implémenter l'appel API réel
+      // const response = await matchService.getMatches();
+      // setMatches(response.data);
+      
+      // Pour l'instant, aucune donnée n'est chargée
+      setMatches([]);
+      console.log('✅ Matches chargés');
+    } catch (error) {
+      console.error("Erreur lors du chargement des matches:", error);
+      setError("Impossible de charger les matches. Veuillez réessayer.");
+      setMatches([]);
+    } finally {
+      setIsLoading(false);
     }
-  ];
-
+  };
   useEffect(() => {
     if (isAuthenticated && user) {
       loadMatches();
@@ -82,29 +56,6 @@ const MatchesPage: React.FC = () => {
   useEffect(() => {
     filterMatches();
   }, [matches, searchTerm, statusFilter]);
-
-  const loadMatches = async () => {
-    setIsLoading(true);
-    setError("");
-    
-    try {
-      // Simulation d'un appel API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // En production, remplacer par un vrai appel API
-      // const response = await matchService.getMatches();
-      // setMatches(response.data);
-      
-      setMatches(demoMatches);
-    } catch (error) {
-      console.error("Erreur lors du chargement des matches:", error);
-      setError("Erreur lors du chargement des matches");
-      // En cas d'erreur, utiliser les données de démo
-      setMatches(demoMatches);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const filterMatches = () => {
     let filtered = matches;

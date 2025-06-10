@@ -193,7 +193,7 @@ const LoginPage: React.FC = () => {
                 id="email"
                 type="email"
                 icon={<Mail size={20} />}
-                placeholder="basamba1990@spotbulle.com"
+                placeholder="votre@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
