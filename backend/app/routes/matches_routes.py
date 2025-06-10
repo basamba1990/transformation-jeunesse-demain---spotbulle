@@ -46,50 +46,12 @@ async def get_matches(
 ):
     """Récupération des matches de l'utilisateur"""
     try:
-        # Données de démo pour les matches
-        demo_matches = [
-            {
-                "id": "match-1",
-                "user_id": current_user.id,
-                "matched_user": {
-                    "id": 2,
-                    "name": "Sophie Martin",
-                    "bio": "Coach en développement personnel",
-                    "compatibility": 92,
-                    "avatar": "/static/avatars/sophie.jpg"
-                },
-                "status": "pending",
-                "created_at": "2024-06-09T08:00:00Z"
-            },
-            {
-                "id": "match-2",
-                "user_id": current_user.id,
-                "matched_user": {
-                    "id": 3,
-                    "name": "Thomas Dubois",
-                    "bio": "Entrepreneur passionné",
-                    "compatibility": 87,
-                    "avatar": "/static/avatars/thomas.jpg"
-                },
-                "status": "accepted",
-                "created_at": "2024-06-08T15:30:00Z"
-            },
-            {
-                "id": "match-3",
-                "user_id": current_user.id,
-                "matched_user": {
-                    "id": 4,
-                    "name": "Marie Leroy",
-                    "bio": "Artiste et créatrice",
-                    "compatibility": 85,
-                    "avatar": "/static/avatars/marie.jpg"
-                },
-                "status": "pending",
-                "created_at": "2024-06-07T11:20:00Z"
-            }
-        ]
+        # TODO: Implémenter la logique réelle de matching
+        # Pour l'instant, retourne une liste vide
+        # En production, ceci devrait interroger la base de données
+        # et retourner les vrais matches de l'utilisateur
         
-        return [MatchResponse(**match) for match in demo_matches]
+        return []
         
     except Exception as e:
         logger.error(f"Erreur récupération matches: {str(e)}")
@@ -110,23 +72,16 @@ async def accept_match(
 ):
     """Accepter un match"""
     try:
-        # Simulation de l'acceptation
-        accepted_match = {
-            "id": match_id,
-            "user_id": current_user.id,
-            "matched_user": {
-                "id": 2,
-                "name": "Sophie Martin",
-                "bio": "Coach en développement personnel",
-                "compatibility": 92,
-                "avatar": "/static/avatars/sophie.jpg"
-            },
-            "status": "accepted",
-            "created_at": "2024-06-09T08:00:00Z"
-        }
+        # TODO: Implémenter la logique réelle d'acceptation de match
+        # Pour l'instant, retourne une erreur indiquant que la fonctionnalité n'est pas implémentée
         
-        return MatchResponse(**accepted_match)
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Fonctionnalité d'acceptation de match non encore implémentée"
+        )
         
+    except HTTPException as he:
+        raise he
     except Exception as e:
         logger.error(f"Erreur acceptation match: {str(e)}")
         raise HTTPException(
@@ -146,23 +101,16 @@ async def reject_match(
 ):
     """Refuser un match"""
     try:
-        # Simulation du refus
-        rejected_match = {
-            "id": match_id,
-            "user_id": current_user.id,
-            "matched_user": {
-                "id": 2,
-                "name": "Sophie Martin",
-                "bio": "Coach en développement personnel",
-                "compatibility": 92,
-                "avatar": "/static/avatars/sophie.jpg"
-            },
-            "status": "rejected",
-            "created_at": "2024-06-09T08:00:00Z"
-        }
+        # TODO: Implémenter la logique réelle de refus de match
+        # Pour l'instant, retourne une erreur indiquant que la fonctionnalité n'est pas implémentée
         
-        return MatchResponse(**rejected_match)
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Fonctionnalité de refus de match non encore implémentée"
+        )
         
+    except HTTPException as he:
+        raise he
     except Exception as e:
         logger.error(f"Erreur refus match: {str(e)}")
         raise HTTPException(

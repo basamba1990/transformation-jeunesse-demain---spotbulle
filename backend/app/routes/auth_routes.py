@@ -43,7 +43,7 @@ class LoginResponse(BaseModel):
 @router.post(
     "/login",
     response_model=LoginResponse,
-    summary="Connexion utilisateur (compatible frontend)"
+    summary="Connexion utilisateur"
 )
 @auth_limiter.limit("5/minute")
 async def login_frontend_compatible(
@@ -51,42 +51,40 @@ async def login_frontend_compatible(
     credentials: LoginRequest,
     db: Session = Depends(get_db)
 ):
-    """Authentification compatible avec le frontend SpotBulle"""
+    """Authentification utilisateur"""
     try:
-        # Utilisateur de test
-        test_email = "basamba2050@spotbulle.com"
-        test_password = "Phys@1990"
-        
-        if credentials.username == test_email and credentials.password == test_password:
-            # Token de démo
-            access_token = "demo_token_spotbulle_2024"
-            
-            return LoginResponse(
-                access_token=access_token,
-                refresh_token="demo_refresh_token",
-                token_type="bearer",
-                user={
-                    "id": 1,
-                    "email": test_email,
-                    "full_name": "Basamba Spotbulle",
-                    "bio": "Passionné de développement personnel",
-                    "avatar": None,
-                    "is_active": True,
-                    "is_superuser": False,
-                    "created_at": "2024-01-01T00:00:00Z"
-                }
-            )
-        else:
+        # Authentification réelle via le service utilisateur
+        user = user_service.authenticate_user(db, credentials.username, credentials.password)
+        if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Identifiants incorrects",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+        
+        # Création des tokens JWT réels
+        tokens = security.create_tokens_response(user)
+        
+        return LoginResponse(
+            access_token=tokens.access_token,
+            refresh_token=tokens.refresh_token,
+            token_type="bearer",
+            user={
+                "id": user.id,
+                "email": user.email,
+                "full_name": user.full_name,
+                "bio": user.bio,
+                "avatar": user.avatar,
+                "is_active": user.is_active,
+                "is_superuser": user.is_superuser,
+                "created_at": user.created_at.isoformat() if user.created_at else None
+            }
+        )
 
     except HTTPException as he:
         raise he
     except Exception as e:
-        logger.error(f"Erreur de connexion frontend: {str(e)}")
+        logger.error(f"Erreur de connexion: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erreur interne d'authentification"
