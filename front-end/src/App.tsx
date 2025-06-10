@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import PodsPage from './pages/PodsPage';
+import PodsCreatePage from './pages/PodsCreatePage';
 import MatchesPage from './pages/MatchesPage';
 import VideoServicePage from './pages/VideoServicePage';
 import TranscriptionServicePage from './pages/TranscriptionServicePage';
@@ -54,6 +55,13 @@ const App = () => {
               <MainLayout>
                 <ProtectedRoute>
                   <PodsPage />
+                </ProtectedRoute>
+              </MainLayout>
+            } />
+            <Route path="/pods/create" element={
+              <MainLayout>
+                <ProtectedRoute>
+                  <PodsCreatePage />
                 </ProtectedRoute>
               </MainLayout>
             } />
