@@ -1,4 +1,4 @@
-// Configuration de la base URL de l'API - CORRIGÉE POUR VITE
+// Configuration de la base URL de l'API - PRODUCTION
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://spotbulle-backend-0lax.onrender.com/api/v1';
 
 // Configuration axios avec intercepteurs
