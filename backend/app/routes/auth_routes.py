@@ -73,8 +73,8 @@ async def login_frontend_compatible(
                 "id": user.id,
                 "email": user.email,
                 "full_name": user.full_name,
-                "bio": user.bio,
-                "avatar": user.avatar,
+                "bio": getattr(user, 'bio', ''),
+                "avatar": getattr(user, 'avatar', ''),
                 "is_active": user.is_active,
                 "is_superuser": user.is_superuser,
                 "created_at": user.created_at.isoformat() if user.created_at else None
